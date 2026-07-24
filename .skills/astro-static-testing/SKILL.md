@@ -15,9 +15,24 @@ plain TS, and keep the `astro:content` call in a thin wrapper.
 
 Example: post routing (which locales get a page, translation vs fallback,
 canonical, hreflang) went into `src/lib/post-routes.ts` as `planPostRoutes(descriptors)`
-— pure, taking `{lang, slug, translations}[]`. `src/lib/posts.ts` keeps
+— taking `{lang, slug, translations}[]`. `src/lib/posts.ts` keeps
 `getCollection(...)`, builds descriptors, calls the pure function, and reattaches
 each rendered entry. Now the hard logic is unit-testable with fixtures, no build.
+
+**Free of `astro:content` is not the same as pure.** That module still imports the
+locale list from the config surface, so its tests silently depend on how the site
+is configured: fixtures written as `{lang: "en", …}` assert routes that a
+single-locale fork never emits. Measured on such a fork: 12 failures across the
+routing and i18n unit tests, while the build assertions stayed green. Either inject
+what the logic reads —
+
+```ts
+planPostRoutes(descriptors, { locales, defaultLocale })   // caller passes the config
+```
+
+— or pin a synthetic config in the test (`vi.mock` the config module) so the unit
+tests exercise the logic instead of the deployment. Injection is the honest fix:
+if a module reads global config, say so rather than calling it pure.
 
 Config, the i18n dictionary, and helpers are already plain TS — import and test
 them directly. Vitest config is minimal:

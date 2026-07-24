@@ -65,9 +65,20 @@ and prefix them at render (`/{lang}${path}`).
 
 Link each locale's equivalent of the current page by swapping the first path
 segment: `"/" + pathname.split("/").slice(2).join("/")` → prefix with each locale.
-This is correct for pages that exist in every locale (home, listings). It is NOT
-correct for a post whose slug differs per language — pass the switcher explicit
-per-locale targets instead (below).
+
+This is correct only where the path after the locale is itself locale-independent:
+home, feeds, about, search. It is NOT correct in two cases:
+
+- **A post whose slug differs per language** — pass the switcher explicit per-locale
+  targets instead (below).
+- **A facet page keyed by an authored value.** `/pt/tags/guia/` swaps to
+  `/en/tags/guia/`, which does not exist, because the English posts are tagged
+  `guide`. Same for categories. The switcher then links a 404 from a page that
+  looks perfectly ordinary — measured at 12 such links on a two-locale site with
+  ~8 posts, and it grows with every language-specific facet value. Facet pages need
+  the same treatment as posts: resolve the target per locale, and when the value has
+  no counterpart there, fall back to that locale's facet index or home rather than
+  emitting a link that cannot resolve.
 
 ## Decoupling page locale from content language (fallback)
 
