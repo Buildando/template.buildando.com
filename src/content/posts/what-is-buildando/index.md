@@ -19,8 +19,8 @@ blog in minutes and customize over time. It is what you are reading now — this
 site is both the blog and the template anyone can clone.
 
 If you came for the template, start here and move on to
-[Installing and customizing](/en/posts/instalando-e-personalizando/) and
-[Writing posts](/en/posts/criando-posts/).
+[Installing and customizing](/en/posts/installing-and-customizing/) and
+[Writing posts](/en/posts/writing-posts/).
 
 ## The idea in one sentence
 
@@ -68,4 +68,4 @@ All identity (name, colors, socials, domain) lives in **one file**
 
 For anyone who wants a **fast, SEO-strong, low-maintenance blog** without running a
 server — and likes writing markdown with content in git. If that's you, next is
-[install and customize](/en/posts/instalando-e-personalizando/).
+[install and customize](/en/posts/installing-and-customizing/).

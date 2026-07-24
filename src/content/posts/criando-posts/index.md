@@ -2,6 +2,8 @@
 title: "Criando posts no Buildando"
 description: "Um post é uma pasta com um markdown. Veja o frontmatter, imagens colocadas, rascunhos e traduções — sem tocar em código."
 lang: pt
+translations:
+  en: writing-posts
 publishDate: 2026-07-20
 category: "Guia"
 tags:

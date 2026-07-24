@@ -73,12 +73,25 @@ describe.skipIf(!existsSync(dist))("build output", () => {
   });
 
   it("serves an untranslated post under the other locale with translated chrome (REQ-033)", () => {
-    const fb = read("en", "posts", "criando-posts", "index.html");
+    const fb = read("en", "posts", "exemplo-sem-traducao", "index.html");
     expect(fb).toContain('<html lang="en"');
     expect(fb).toContain('aria-label="Main"'); // nav chrome in English (nav.aria)
     expect(fb).toContain('<article lang="pt-BR"'); // body marked Portuguese
     expect(fb).toContain(
-      `rel="canonical" href="${origin}/pt/posts/criando-posts/"`,
+      `rel="canonical" href="${origin}/pt/posts/exemplo-sem-traducao/"`,
+    );
+  });
+
+  it("lets a translation supersede the fallback route (REQ-033)", () => {
+    // criando-posts now has an English version, so no fallback is emitted for it;
+    // each side is its own canonical and they list each other as alternates.
+    expect(has("en", "posts", "criando-posts", "index.html")).toBe(false);
+    const en = read("en", "posts", "writing-posts", "index.html");
+    expect(en).toContain(
+      `rel="canonical" href="${origin}/en/posts/writing-posts/"`,
+    );
+    expect(en).toContain(
+      `hreflang="pt-BR" href="${origin}/pt/posts/criando-posts/"`,
     );
   });
 

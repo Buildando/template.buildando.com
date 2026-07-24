@@ -2,6 +2,8 @@
 title: "Instalando o Buildando e personalizando"
 description: "Do fork ao ar: instale, rode localmente e personalize a identidade, o texto inicial da home e a página Sobre — tudo a partir de um arquivo de configuração."
 lang: pt
+translations:
+  en: installing-and-customizing
 publishDate: 2026-07-21
 category: "Guia"
 tags:
@@ -17,9 +19,10 @@ colocar o seu no ar e deixá-lo com a sua cara.
 
 ## 1. Pegue o template
 
-O template vive em **github.com/Buildando/template.buildando.com**. Lá, clique em
-**"Use this template" → Create a new repository** (ou faça um fork). Depois, clone
-o **seu** repositório e instale:
+O template vive em
+[github.com/Buildando/template.buildando.com](https://github.com/Buildando/template.buildando.com).
+Lá, clique em **"Use this template" → Create a new repository** (ou faça um fork).
+Depois, clone o **seu** repositório e instale:
 
 ```bash
 git clone https://github.com/SEU-USUARIO/SEU-REPO.git
