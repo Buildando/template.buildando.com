@@ -89,6 +89,41 @@ then optimizes it into responsive assets and `og:image` resolves to the hashed
 `/_astro/` file — the same image serves the page and the social preview, and the
 build-time auto-card fallback stays only for posts that ship no cover.
 
+## A translated cover differs only in its words
+
+When a post gets a translation, its cover should be the same picture with the text
+swapped — same glyph, same furniture, same everything. Redrawing the glyph invites
+drift, so don't: render the base (ground, bar, mark, eyebrow, title, subtitle) and
+composite the counterpart's glyph straight out of its PNG.
+
+```js
+const png = await sharp(Buffer.from(base(text))).png().toBuffer();
+const glyph = await sharp(siblingCover).extract(rect).toBuffer();   // rect around the glyph
+await sharp(png).composite([{ input: glyph, left: rect.left, top: rect.top }]).png().toFile(out);
+```
+
+The seam is invisible because both images carry the same generated background —
+verify that first by diffing a background-only region of a regenerated cover
+against the original: it should be **0 pixels different**, not merely close.
+
+## Recovering a generator you did not keep
+
+Writing the PNG into the post folder and leaving the script out means the next
+cover has nothing to reuse. If that already happened, the existing covers are the
+spec — recover the parameters by calibration rather than by eye:
+
+1. Sample the art for its palette: read the raw pixels and take the dominant color
+   in each region (bar, eyebrow, title, subtitle, glyph). Guessing from a screenshot
+   confuses an antialiased edge for a fill.
+2. Re-render one existing cover from your reconstruction and compare **bounding box
+   and ink-pixel count** per text run against the original.
+3. Adjust one variable at a time — anchor, then size, then tracking. A run that
+   matches in height but is wider is tracking, not size.
+
+Sub-pixel differences that survive are fine; a 1px width delta on a 450px title is
+not visible. What this buys you is confidence that new covers belong to the same set.
+Then keep the script this time.
+
 ## Verify
 
 Open each PNG (they are 1200×630) and read it as a stranger would: is the topic

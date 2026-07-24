@@ -68,7 +68,11 @@ bug: validate *files and pipeline* in the subfolder, validate *visuals* locally
 3. Deleting thousands of files (a full WordPress) over FTPS is slow — expect
    10–30 min for that one run.
 4. If old URLs aren't being preserved, they simply 404 (fine); ship a `404.html`.
-   To keep ranking, add `301` redirects in `.htaccess` instead.
+   To keep ranking, add `301` redirects in `.htaccess` instead. A generator's own
+   redirect map (Astro's `redirects`, say) is the cheaper option and travels with the
+   build, but it emits a `noindex` meta-refresh stub, not a `301` — enough to keep a
+   bookmarked or linked URL working, not enough to pass ranking on. Pick by whether
+   the old URL was actually indexed.
 
 ## GitHub Environment secrets
 

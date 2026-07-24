@@ -106,3 +106,26 @@ details:
 
 Validate declared translations against actually-published posts so a stale link
 degrades to a fallback instead of a 404.
+
+## Publishing a translation deletes a URL
+
+The fallback route exists only while the translation does not. The day you publish
+`/en/posts/writing-posts/`, the address the same content was served at —
+`/en/posts/criando-posts/`, the Portuguese slug under the English locale — stops
+being generated and starts returning 404. It is the correct routing outcome and a
+silent regression for anyone holding the old link.
+
+So when the fallback URL was ever public, redirect it as part of the same change:
+
+```ts
+redirects: { "/en/posts/criando-posts": "/en/posts/writing-posts/" }
+```
+
+Search impact is mild — a fallback page's canonical already pointed at the source,
+so it was not ranking on its own — but direct links and bookmarks are real. If the
+old URL did rank, a `301` from the host's config beats Astro's `redirects`, which
+emits a `noindex` meta-refresh stub.
+
+That stub is worth knowing about when you assert on `dist/`: it is an `index.html`
+carrying a canonical of its own, so anything classifying pages by canonical must
+skip it (`/http-equiv="refresh"/`) or it reads as a page that it is not.
