@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { readFileSync, existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { SITE } from "../src/config/site";
+import { locales, defaultLocale, localeMeta, useTranslations } from "../src/i18n";
 
 // Absolute SEO URLs derive from the one configured origin (REQ-018), so a fork
 // changing SITE.url does not break these assertions.
@@ -11,25 +12,131 @@ const origin = SITE.url;
 // (which builds first), or `npm run build` before `npm test`.
 const dist = join(process.cwd(), "dist");
 const src = join(process.cwd(), "src");
+const built = existsSync(dist);
 const read = (...p: string[]) => readFileSync(join(dist, ...p), "utf8");
 const has = (...p: string[]) => existsSync(join(dist, ...p));
 
-describe.skipIf(!existsSync(dist))("build output", () => {
+/**
+ * Subjects are derived from the build, never named by slug. The template ships
+ * example content a forker is told to replace (REQ-002), and CI runs
+ * `npm run build && npm test` — so a suite that hardcoded the sample slugs would
+ * fail the fork's pipeline, and block its deploy, the moment it wrote its own
+ * posts. Instead each test finds a post exhibiting the precondition it cares
+ * about and reports itself skipped when the content has no such case.
+ */
+const attr = (html: string, re: RegExp) => re.exec(html)?.[1];
+const escapeAttr = (s: string) =>
+  s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+/** Every post in source, with the frontmatter facts the tests select on. */
+const contentDir = join(src, "content", "posts");
+const field = (fm: string, name: string) =>
+  new RegExp(`^${name}:[ \\t]*(.+)$`, "m").exec(fm)?.[1].trim().replace(/^["']|["']$/g, "");
+const sourcePosts = existsSync(contentDir)
+  ? readdirSync(contentDir)
+      .filter((slug) => existsSync(join(contentDir, slug, "index.md")))
+      .sort()
+      .map((slug) => {
+        const fm = readFileSync(join(contentDir, slug, "index.md"), "utf8").split(/^---$/m)[1] ?? "";
+        return {
+          slug,
+          lang: field(fm, "lang") ?? defaultLocale,
+          category: field(fm, "category"),
+          hasCover: /^cover:/m.test(fm),
+          isDraft: /^draft:[ \t]*true\b/m.test(fm),
+        };
+      })
+  : [];
+const published = sourcePosts.filter((p) => !p.isDraft);
+const draftPost = sourcePosts.find((p) => p.isDraft);
+const somePost = published[0];
+const coverPost = published.find((p) => p.hasCover);
+const pageOf = (p: { lang: string; slug: string }) => read(p.lang, "posts", p.slug, "index.html");
+
+/** A configured redirect builds a meta-refresh stub, not a page. It carries a
+ *  canonical of its own, so it has to be told apart from a rendered post. */
+const isRedirectStub = (html: string) => /http-equiv="refresh"/i.test(html);
+
+/** Every built post page, tagged with the canonical it declares. */
+const builtPages = built
+  ? locales.flatMap((lang) => {
+      const dir = join(dist, lang, "posts");
+      if (!existsSync(dir)) return [];
+      return readdirSync(dir)
+        .filter((slug) => existsSync(join(dir, slug, "index.html")))
+        .filter((slug) => !isRedirectStub(read(lang, "posts", slug, "index.html")))
+        .map((slug) => {
+          const html = read(lang, "posts", slug, "index.html");
+          return {
+            lang,
+            slug,
+            html,
+            canonical: attr(html, /rel="canonical" href="([^"]+)"/) ?? "",
+            own: `${origin}/${lang}/posts/${slug}/`,
+          };
+        });
+    })
+  : [];
+
+/** Pages a locale serves for a post written in another language (REQ-033):
+ *  the giveaway is a canonical pointing out of the locale serving the page. */
+const fallbackPages = builtPages.filter((p) => p.canonical !== p.own);
+
+/** Posts with a real translation: self-canonical, and listing an alternate in
+ *  another locale. Each such alternate must have superseded a fallback route. */
+const translatedPairs = builtPages
+  .filter((p) => p.canonical === p.own)
+  .flatMap((p) =>
+    [...p.html.matchAll(/hreflang="([^"]+)" href="([^"]+)"/g)]
+      .filter(([, hreflang]) => hreflang !== "x-default")
+      .map(([, hreflang, href]) => ({ from: p, hreflang, href }))
+      .filter(({ hreflang, href }) => hreflang !== localeMeta(p.lang).htmlLang && href !== p.own),
+  );
+
+/** Any built facet page of a locale, for the assertions about facet listings. */
+const someCategory = (lang: string) => {
+  const dir = join(dist, lang, "categories");
+  return existsSync(dir)
+    ? readdirSync(dir).find((c) => existsSync(join(dir, c, "index.html")))
+    : undefined;
+};
+
+/** The hero block of a home page, where the markdown entry is rendered. */
+const heroOf = (html: string) => {
+  const start = html.indexOf('<section class="hero"');
+  return start < 0 ? "" : html.slice(start, html.indexOf("</section>", start));
+};
+
+/** The prose a locale's home hero is authored from (REQ-034). */
+const homeHeroes = locales
+  .map((lang) => ({ lang, file: join(src, "content", "home", `${lang}.md`) }))
+  .filter(({ file }) => existsSync(file))
+  .map(({ lang, file }) => {
+    const body = readFileSync(file, "utf8").split(/^---$/m).pop() ?? "";
+    const line = body
+      .split("\n")
+      .map((l) => l.trim())
+      .find((l) => l && !l.startsWith("#"));
+    return { lang, line };
+  })
+  .filter((h): h is { lang: string; line: string } => Boolean(h.line));
+
+describe.skipIf(!built)("build output", () => {
   it("redirects the root to the default locale (REQ-032)", () => {
-    expect(read("index.html")).toContain("/pt/");
+    expect(read("index.html")).toContain(`/${defaultLocale}/`);
   });
 
   it("emits per-locale homes, feeds, sitemap, robots (REQ-014–016, 032)", () => {
-    expect(has("pt", "index.html")).toBe(true);
-    expect(has("en", "index.html")).toBe(true);
-    expect(has("pt", "rss.xml")).toBe(true);
-    expect(has("en", "rss.xml")).toBe(true);
+    for (const lang of locales) {
+      expect(has(lang, "index.html")).toBe(true);
+      expect(has(lang, "rss.xml")).toBe(true);
+    }
     expect(has("sitemap-index.xml")).toBe(true);
     expect(read("robots.txt")).toContain("Sitemap:");
   });
 
-  it("emits full SEO on a post page (REQ-011–013, 018)", () => {
-    const html = read("pt", "posts", "o-que-e-o-buildando", "index.html");
+  it.skipIf(!somePost)("emits full SEO on a post page (REQ-011–013, 018)", () => {
+    const html = pageOf(somePost);
     expect(html).toContain(`<link rel="canonical" href="${origin}/`);
     expect(html).toContain(`property="og:image" content="${origin}/`);
     expect(html).toContain('name="twitter:card"');
@@ -37,62 +144,85 @@ describe.skipIf(!existsSync(dist))("build output", () => {
     expect(html).toContain('"@type":"BreadcrumbList"'); // REQ-013
   });
 
-  it("uses the post cover as og:image, absolute under the domain (REQ-012)", () => {
-    // All shipped posts now have covers; the auto OG-card path (og/[...route].ts)
-    // stays for cover-less posts a forker adds, but there is no shipped example.
-    const html = read("pt", "posts", "criando-posts", "index.html");
-    expect(html).toContain(`property="og:image" content="${origin}/_astro/`);
+  it.skipIf(!coverPost)("uses the post cover as og:image, absolute under the domain (REQ-012)", () => {
+    // A post that declares a cover serves the optimized asset as its social image;
+    // the auto OG-card path (og/[...route].ts) covers the cover-less case below.
+    expect(pageOf(coverPost!)).toContain(`property="og:image" content="${origin}/_astro/`);
   });
 
-  it("excludes drafts from the production build (REQ-007)", () => {
-    const slug = "exemplo-rascunho"; // ships with draft: true
-    expect(has("pt", "posts", slug, "index.html")).toBe(false); // no page
-    expect(read("pt", "index.html")).not.toContain(slug); // not in the home list
+  it.skipIf(!published.some((p) => !p.hasCover))(
+    "generates a branded OG card for a cover-less post (REQ-012)",
+    () => {
+      const bare = published.find((p) => !p.hasCover)!;
+      expect(pageOf(bare)).toContain(
+        `property="og:image" content="${origin}/og/${bare.slug}.png`,
+      );
+    },
+  );
+
+  it.skipIf(!draftPost)("excludes drafts from the production build (REQ-007)", () => {
+    const { slug, lang, category } = draftPost!;
+    expect(has(lang, "posts", slug, "index.html")).toBe(false); // no page
+    expect(read(lang, "index.html")).not.toContain(slug); // not in the home list
     expect(read("sitemap-0.xml")).not.toContain(slug); // not in the sitemap
-    expect(read("pt", "rss.xml")).not.toContain(slug); // not in the feed
-    expect(read("pt", "categories", "Guia", "index.html")).not.toContain(slug); // not in its facet
+    expect(read(lang, "rss.xml")).not.toContain(slug); // not in the feed
+    if (category && has(lang, "categories", category, "index.html")) {
+      expect(read(lang, "categories", category, "index.html")).not.toContain(slug); // not in its facet
+    }
     expect(has("og", `${slug}.png`)).toBe(false); // no OG card generated
   });
 
-  it("optimizes colocated cover images into responsive WebP (REQ-006)", () => {
-    const html = read("pt", "posts", "o-que-e-o-buildando", "index.html");
-    expect(html).toMatch(/srcset="[^"]*\.webp[^"]*\s\d+w/); // responsive webp srcset
+  it.skipIf(!coverPost)("optimizes colocated cover images into responsive WebP (REQ-006)", () => {
+    expect(pageOf(coverPost!)).toMatch(/srcset="[^"]*\.webp[^"]*\s\d+w/); // responsive webp srcset
     expect(readdirSync(join(dist, "_astro")).some((f) => f.endsWith(".webp"))).toBe(true);
   });
 
-  it("renders the home hero from markdown (REQ-034)", () => {
-    // Markdown-rendered headings get slug ids; a hardcoded hero would not.
-    expect(read("pt", "index.html")).toContain('<h1 id="buildando"');
-    expect(read("en", "index.html")).toContain('<h1 id="buildando"');
+  it.skipIf(!homeHeroes.length)("renders each home hero from its own markdown (REQ-032, 034)", () => {
+    for (const { lang, line } of homeHeroes) {
+      // Scoped to the hero: the same prose also reaches the meta description, so
+      // asserting on the whole document would pass on a hardcoded hero.
+      const hero = heroOf(read(lang, "index.html"));
+      expect(hero).not.toBe("");
+      // Markdown-rendered headings get slug ids; a hardcoded hero would not.
+      expect(hero).toMatch(/<h1 id="[^"]+"/);
+      // and the prose is this locale's own file, not another locale's
+      expect(hero).toContain(escapeAttr(line));
+    }
   });
 
-  it("localizes the site tagline on the english home (REQ-032)", () => {
-    expect(read("en", "index.html")).toContain(
-      "Software development best practices",
-    );
-  });
+  it.skipIf(!fallbackPages.length)(
+    "serves an untranslated post under the other locale with translated chrome (REQ-033)",
+    () => {
+      for (const { lang, html, canonical } of fallbackPages) {
+        expect(html).toContain(`<html lang="${localeMeta(lang).htmlLang}"`);
+        expect(html).toContain(`aria-label="${useTranslations(lang)("nav.aria")}"`); // chrome in the page locale
+        // the body keeps its own content language, which is not the page locale
+        const bodyLang = attr(html, /<article lang="([^"]+)"/);
+        expect(bodyLang).toBeTruthy();
+        expect(bodyLang).not.toBe(localeMeta(lang).htmlLang);
+        // and the canonical points at a page that really exists in that language
+        expect(canonical.startsWith(`${origin}/`)).toBe(true);
+        expect(has(...canonical.slice(origin.length).split("/").filter(Boolean), "index.html")).toBe(true);
+      }
+    },
+  );
 
-  it("serves an untranslated post under the other locale with translated chrome (REQ-033)", () => {
-    const fb = read("en", "posts", "exemplo-sem-traducao", "index.html");
-    expect(fb).toContain('<html lang="en"');
-    expect(fb).toContain('aria-label="Main"'); // nav chrome in English (nav.aria)
-    expect(fb).toContain('<article lang="pt-BR"'); // body marked Portuguese
-    expect(fb).toContain(
-      `rel="canonical" href="${origin}/pt/posts/exemplo-sem-traducao/"`,
-    );
-  });
-
-  it("lets a translation supersede the fallback route (REQ-033)", () => {
-    // criando-posts now has an English version, so no fallback is emitted for it;
-    // each side is its own canonical and they list each other as alternates.
-    expect(has("en", "posts", "criando-posts", "index.html")).toBe(false);
-    const en = read("en", "posts", "writing-posts", "index.html");
-    expect(en).toContain(
-      `rel="canonical" href="${origin}/en/posts/writing-posts/"`,
-    );
-    expect(en).toContain(
-      `hreflang="pt-BR" href="${origin}/pt/posts/criando-posts/"`,
-    );
+  it.skipIf(!translatedPairs.length)("lets a translation supersede the fallback route (REQ-033)", () => {
+    for (const { from, href } of translatedPairs) {
+      const [lang, , slug] = href.slice(origin.length).split("/").filter(Boolean);
+      // the translation is served at its own slug, as its own canonical...
+      expect(read(lang, "posts", slug, "index.html")).toContain(
+        `rel="canonical" href="${origin}/${lang}/posts/${slug}/"`,
+      );
+      // ...so that locale renders no fallback page for the source post. A
+      // URL-preserving redirect may sit at the old address; a rendered page may not.
+      if (slug !== from.slug) {
+        const stray = join(dist, lang, "posts", from.slug, "index.html");
+        if (existsSync(stray)) {
+          expect(isRedirectStub(readFileSync(stray, "utf8"))).toBe(true);
+        }
+      }
+    }
   });
 
   it("builds a static client search index (REQ-020, 021)", () => {
@@ -100,7 +230,7 @@ describe.skipIf(!existsSync(dist))("build output", () => {
   });
 
   it("emits no analytics/ads/consent by default (REQ-038, REQ-042)", () => {
-    const html = read("pt", "index.html");
+    const html = read(defaultLocale, "index.html");
     expect(html).not.toContain("googletagmanager.com");
     expect(html).not.toContain("adsbygoogle");
     expect(html).not.toContain("plausible.io");
@@ -108,11 +238,11 @@ describe.skipIf(!existsSync(dist))("build output", () => {
   });
 
   it("renders no newsletter form by default (REQ-039)", () => {
-    expect(read("pt", "index.html")).not.toContain('class="newsletter"');
+    expect(read(defaultLocale, "index.html")).not.toContain('class="newsletter"');
   });
 
-  it("shows share buttons on a post (REQ-040)", () => {
-    const html = read("pt", "posts", "o-que-e-o-buildando", "index.html");
+  it.skipIf(!somePost)("shows share buttons on a post (REQ-040)", () => {
+    const html = pageOf(somePost);
     expect(html).toContain("x.com/intent/tweet");
     expect(html).toContain("wa.me/?text=");
     expect(html).toContain("share-copy"); // copy-link button
@@ -120,7 +250,7 @@ describe.skipIf(!existsSync(dist))("build output", () => {
   });
 
   it("renders the home facet filter, hidden until JS (REQ-035)", () => {
-    const html = read("pt", "index.html");
+    const html = read(defaultLocale, "index.html");
     expect(html).toContain('id="filter-bar" hidden');
     expect(html).toContain('data-filter="category"');
     expect(html).toContain('data-filter="month"'); // month chips (date facet)
@@ -129,28 +259,32 @@ describe.skipIf(!existsSync(dist))("build output", () => {
   });
 
   it("exposes search from the layout on every page (REQ-036)", () => {
-    for (const page of ["pt/index.html", "en/index.html", "pt/posts/criando-posts/index.html"]) {
-      const html = readFileSync(join(dist, page), "utf8");
+    const pages = [
+      ...locales.map((lang) => read(lang, "index.html")),
+      ...(somePost ? [pageOf(somePost)] : []),
+    ];
+    for (const html of pages) {
       expect(html).toContain('class="search-trigger"');
       expect(html).toContain('id="search-dialog"');
     }
   });
 
-  it("indexes only posts for search (REQ-020)", () => {
+  it.skipIf(!somePost)("indexes only posts for search (REQ-020)", () => {
     // data-pagefind-body marks the post article; no other page carries it, so
     // category, tag, home and about pages are excluded from the search index.
-    expect(read("pt", "posts", "o-que-e-o-buildando", "index.html")).toContain(
-      "data-pagefind-body",
-    );
-    expect(read("pt", "index.html")).not.toContain("data-pagefind-body");
-    expect(read("pt", "categories", "Guia", "index.html")).not.toContain(
-      "data-pagefind-body",
-    );
-    expect(read("pt", "about", "index.html")).not.toContain("data-pagefind-body");
+    expect(pageOf(somePost)).toContain("data-pagefind-body");
+    expect(read(defaultLocale, "index.html")).not.toContain("data-pagefind-body");
+    const category = someCategory(defaultLocale);
+    if (category) {
+      expect(read(defaultLocale, "categories", category, "index.html")).not.toContain(
+        "data-pagefind-body",
+      );
+    }
+    expect(read(defaultLocale, "about", "index.html")).not.toContain("data-pagefind-body");
   });
 
   it("serves a search results page with a query form (REQ-036)", () => {
-    const html = read("pt", "search", "index.html");
+    const html = read(defaultLocale, "search", "index.html");
     expect(html).toContain('name="q"'); // the query input the form submits
     expect(html).toContain('id="search-results"'); // container the client fills with cards
     expect(html).toContain("/pagefind/pagefind.js"); // renders via the Pagefind JS API
