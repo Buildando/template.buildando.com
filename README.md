@@ -158,6 +158,7 @@ between them):
 | `mono` | monospace headings, high contrast, amber accent |
 | `minimal` | near-monochrome, airy, a single lime accent |
 | `warmDev` | the Solarized palette, cozy and familiar |
+| `brutalist` | radical: hard borders, zero radius, offset shadows, violet accent |
 
 **Make your own** — copy a preset in `src/config/skins.ts`, rename its key, and
 edit the values. Every value is a plain CSS value, so customizing the look is just
@@ -177,6 +178,13 @@ editing these tokens:
 For a brand-new typeface, self-host it (e.g. via Fontsource) and add it to the
 stack. Post cover images are content, not theme, so they don't change with the
 skin — use covers that suit your palette.
+
+**Go beyond color** — a skin can change **structure**, not just tokens. `<html>`
+carries `data-skin="<active>"`, so add rules scoped by `[data-skin="yourname"]` in
+`src/styles/skins.css` (borders, radius, shadows, spacing, weight). Written against
+the color tokens, they adapt to light and dark for free. The `brutalist` skin is
+the worked example — hard borders, zero radius, and offset shadows, all from one
+scoped block.
 
 ## Analytics and ads
 

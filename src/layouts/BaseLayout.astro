@@ -8,12 +8,14 @@ import Footer from "../components/Footer.astro";
 import NewsletterForm from "../components/NewsletterForm.astro";
 import SearchModal from "../components/SearchModal.astro";
 import Analytics from "../integrations/Analytics.astro";
-import { SITE, BRAND, THEME } from "../config/site";
+import { SITE, BRAND, THEME, ACTIVE_SKIN } from "../config/site";
 import { localeMeta } from "../i18n";
 // Self-hosted variable fonts (no external request). Bundled into the build.
 import "@fontsource-variable/inter";
 import "@fontsource-variable/space-grotesk";
 import "../styles/global.css";
+// Per-skin structural overrides (beyond color/font tokens), scoped by data-skin.
+import "../styles/skins.css";
 
 interface Props {
   title: string;
@@ -66,7 +68,7 @@ const shikiCss =
 ---
 
 <!doctype html>
-<html lang={htmlLang}>
+<html lang={htmlLang} data-skin={ACTIVE_SKIN}>
   <head>
     <BaseHead lang={lang} {...rest} />
     <style is:inline set:html={tokens + shikiCss}></style>

@@ -387,13 +387,17 @@ There is no running service to observe. The signals are:
 - **Done: alternate visual identities ("skins").** The look is a token preset in
   `src/config/skins.ts` — a light+dark palette, three fonts, and the content width
   — chosen by `ACTIVE_SKIN` in `site.ts` and injected as CSS custom properties, so
-  there is one source of truth (no parallel stylesheet). Five skins ship:
-  `terminal` (default), `editorial` (serif), `mono` (monospace), `minimal`, and
-  `warmDev` (Solarized), each with light and dark. Switching is one line; authoring
-  is copying a preset and editing token values. A "Skins" section in `README.md`
-  documents the tokens and how to switch or author one, and `test/skins.test.ts`
-  asserts every skin is a complete preset. Post covers are content, not theme, so
-  they don't follow the skin.
+  there is one source of truth (no parallel stylesheet). Six skins ship:
+  `terminal` (default), `editorial` (serif), `mono` (monospace), `minimal`,
+  `warmDev` (Solarized), and `brutalist` (a deliberately radical one), each with
+  light and dark. Most skins only retune the tokens; a skin can also change
+  **structure** — `<html>` carries `data-skin`, and rules scoped by
+  `[data-skin="<name>"]` in `src/styles/skins.css` (borders, radius, shadows,
+  spacing, weight) adapt to light/dark through the same tokens. `brutalist` is the
+  worked example. Switching is one line; authoring is copying a preset (and, for a
+  structural skin, adding a scoped block). A "Skins" section in `README.md`
+  documents it, and `test/skins.test.ts` asserts every skin is a complete preset.
+  Post covers are content, not theme, so they don't follow the skin.
 - **Social share buttons — done (`REQ-040`).** Static share-intent links (X,
   WhatsApp, Telegram, LinkedIn, Facebook) plus a JS-gated "copy link", at the end of
   each post, config-driven via `SHARE`. The native Web Share API was not added; it

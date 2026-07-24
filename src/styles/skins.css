@@ -1,0 +1,125 @@
+/* Per-skin STRUCTURAL overrides — the part a skin changes beyond the color and
+   font tokens (borders, radius, shadows, spacing, weight). Each block is scoped
+   by `[data-skin="<name>"]` (set on <html> from ACTIVE_SKIN), so only the active
+   skin's rules apply; the rest are inert. Colors come from the tokens, so every
+   rule below adapts to light and dark automatically. Skins that only retune
+   colors/fonts (terminal, editorial, mono, minimal, warmDev) need nothing here. */
+
+/* ── Brutalist ───────────────────────────────────────────────────────────────
+   Hard high-contrast borders, zero radius, offset "hard" shadows, heavier type.
+   A deliberately radical, structure-changing skin. */
+
+/* A loud accent slab across the very top of the page. */
+:root[data-skin="brutalist"] body {
+  border-top: 6px solid var(--color-accent);
+}
+
+/* Sharp corners everywhere the default rounds. */
+:root[data-skin="brutalist"]
+  :where(
+    .card,
+    .filter-bar,
+    .chip,
+    .icon-chip,
+    .pg-btn,
+    .search-dialog,
+    #search-q,
+    .search-submit,
+    .cover img,
+    .author-photo,
+    img,
+    button,
+    input
+  ) {
+  border-radius: 0 !important;
+}
+
+/* Heavier, tighter headings; solid, loud section labels. */
+:root[data-skin="brutalist"] h1,
+:root[data-skin="brutalist"] h2,
+:root[data-skin="brutalist"] h3 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+:root[data-skin="brutalist"] .section-title {
+  color: var(--color-text);
+  font-weight: 800;
+}
+
+/* Hero title: kill the gradient, go solid, and underline with a thick accent. */
+:root[data-skin="brutalist"] .hero h1 {
+  background: none !important;
+  color: var(--color-text) !important;
+  -webkit-text-fill-color: var(--color-text) !important;
+  display: inline-block;
+  padding-bottom: 0.08em;
+  border-bottom: 8px solid var(--color-accent);
+}
+
+/* Cards become full bordered boxes with a hard offset shadow. */
+:root[data-skin="brutalist"] #post-list {
+  border-top: 0;
+  margin-top: 0;
+}
+:root[data-skin="brutalist"] .card {
+  border: 3px solid var(--color-border);
+  box-shadow: 6px 6px 0 var(--color-text);
+  background: var(--color-surface);
+  padding: 1.25rem;
+  margin-bottom: 1.75rem;
+}
+:root[data-skin="brutalist"] .card .cover img {
+  border: 3px solid var(--color-border);
+}
+
+/* The filter bar and the search dialog get the same hard treatment. */
+:root[data-skin="brutalist"] .filter-bar,
+:root[data-skin="brutalist"] .search-dialog {
+  border: 3px solid var(--color-border);
+  box-shadow: 6px 6px 0 var(--color-text);
+}
+
+/* Chips: square, bold, uppercase; a pressed chip casts a hard shadow. */
+:root[data-skin="brutalist"] .chip {
+  border: 2px solid var(--color-border);
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+}
+:root[data-skin="brutalist"] .chip[aria-pressed="true"] {
+  box-shadow: 3px 3px 0 var(--color-text);
+}
+
+/* Buttons: bordered with a hard shadow; pressing "pushes" the shadow in. */
+:root[data-skin="brutalist"] :where(.pg-btn, .search-submit, .icon-chip) {
+  border: 2px solid var(--color-border);
+  box-shadow: 3px 3px 0 var(--color-text);
+  transition:
+    transform 0.05s ease,
+    box-shadow 0.05s ease;
+}
+:root[data-skin="brutalist"] :where(.pg-btn, .search-submit, .icon-chip):hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 var(--color-text);
+}
+:root[data-skin="brutalist"] :where(.pg-btn, .search-submit, .icon-chip):active {
+  transform: translate(3px, 3px);
+  box-shadow: none;
+}
+:root[data-skin="brutalist"] .pg-btn.disabled {
+  box-shadow: none;
+}
+
+/* Search input and body links get a bolder presence. */
+:root[data-skin="brutalist"] #search-q {
+  border: 2px solid var(--color-border);
+}
+:root[data-skin="brutalist"] a {
+  font-weight: 600;
+}
+
+/* Blockquotes: a thick slab instead of a hairline. */
+:root[data-skin="brutalist"] blockquote {
+  border-left-width: 6px;
+}

@@ -174,6 +174,37 @@ export const SKINS = {
     fonts: { body: SANS, heading: GROTESK, mono: MONO },
     contentWidth: "46rem",
   },
+
+  /**
+   * Brutalist — a deliberately radical skin: hard high-contrast borders, zero
+   * radius, offset "hard" shadows, heavier type. Unlike the others it changes
+   * structure, not just color — those rules live in src/styles/skins.css, scoped
+   * by `[data-skin="brutalist"]`, and adapt to light/dark through the tokens.
+   */
+  brutalist: {
+    colors: {
+      light: {
+        bg: "#f5f5f0",
+        surface: "#ffffff",
+        text: "#0a0a0a",
+        muted: "#44444a",
+        accent: "#7c3aed",
+        accentContrast: "#ffffff",
+        border: "#0a0a0a",
+      },
+      dark: {
+        bg: "#0a0a0a",
+        surface: "#16161a",
+        text: "#f4f4f5",
+        muted: "#a1a1aa",
+        accent: "#a78bfa",
+        accentContrast: "#0a0a0a",
+        border: "#f4f4f5",
+      },
+    },
+    fonts: { body: SANS, heading: GROTESK, mono: MONO },
+    contentWidth: "48rem",
+  },
 } satisfies Record<string, Skin>;
 
 export type SkinName = keyof typeof SKINS;
