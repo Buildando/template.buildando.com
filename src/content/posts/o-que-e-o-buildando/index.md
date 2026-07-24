@@ -35,7 +35,7 @@ busca, feeds, dados estruturados — vira arquivos que qualquer hospedagem serve
 Não há banco de dados, painel de administração nem servidor para manter. As duas
 funções que normalmente exigiriam um backend são delegadas:
 
-- **Busca** é um índice estático gerado no build, que roda no navegador.
+- **Busca** é um índice estático **dos posts**, gerado no build e rodando no navegador.
 - **Comentários** são o GitHub Discussions (ou outro provedor) embutido na página.
 
 Isso deixa o site rápido, barato de hospedar e com o conteúdo versionado no git —
@@ -50,7 +50,9 @@ onde texto e código já se sentem em casa.
 - **Tema claro/escuro** com botão, lembrado entre visitas.
 - **Multi-idiomas** com rotas por idioma, seletor e `hreflang` — este post, por
   exemplo, tem uma versão em inglês (troque no canto superior).
-- **Busca** em modal (tecle `/` ou `⌘K`) e **filtro** por categoria, tag e mês.
+- **Busca** só de posts: preview no modal (tecle `/` ou `⌘K`) e, no Enter, uma
+  **página de resultados** com os mesmos cards do feed. Mais o **filtro** por
+  categoria, tag e mês na home.
 - **Compartilhar**, **newsletter** e **analytics/anúncios** opcionais, com banner
   de consentimento.
 

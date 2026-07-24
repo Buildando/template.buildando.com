@@ -34,7 +34,7 @@ search, feeds, structured data — becomes files any host can serve. No database
 admin panel, no server to maintain. The two features that would normally need a
 backend are delegated:
 
-- **Search** is a static index built at build time and run in the browser.
+- **Search** is a static index **of the posts**, built at build time and run in the browser.
 - **Comments** are GitHub Discussions (or another provider) embedded on the page.
 
 That keeps the site fast, cheap to host, and its content versioned in git — where
@@ -49,7 +49,9 @@ text and code already feel at home.
 - **Light/dark theme** with a toggle, remembered across visits.
 - **Multilingual** with per-locale routes, a switcher, and `hreflang` — this post
   has a Portuguese version (switch it in the top corner).
-- **Search** in a modal (press `/` or `⌘K`) and a **filter** by category, tag, month.
+- **Search** (posts only): a live preview in a modal (press `/` or `⌘K`) and, on
+  Enter, a **results page** with the same cards as the feed. Plus a **filter** by
+  category, tag, month on the home.
 - Optional **share**, **newsletter**, and **analytics/ads** with a consent banner.
 
 ## Generic and contributable
