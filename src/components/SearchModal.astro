@@ -49,16 +49,30 @@ const searchPath = localizedPath(lang, "/search");
         open();
       }
     });
-    // Enter in the live-preview input opens the full results page (REQ-036).
+    // Open the full results page from the live-preview input (REQ-036). Desktop
+    // fires a keydown Enter; on mobile the keyboard's action key ("Search"/"Go")
+    // submits Pagefind's <form> instead of firing a usable keydown, so handle
+    // both. The submit listener runs in capture so it beats Pagefind's own.
+    function goToResults(input) {
+      var q = input && input.value ? input.value.trim() : "";
+      if (q) location.href = dialog.dataset.search + "/?q=" + encodeURIComponent(q);
+    }
     dialog.addEventListener("keydown", function (e) {
       if (e.key !== "Enter") return;
       var tgt = e.target;
       if (!tgt || tgt.tagName !== "INPUT") return;
-      var q = (tgt.value || "").trim();
-      if (!q) return;
       e.preventDefault();
-      location.href = dialog.dataset.search + "/?q=" + encodeURIComponent(q);
+      goToResults(tgt);
     });
+    dialog.addEventListener(
+      "submit",
+      function (e) {
+        e.preventDefault();
+        var form = e.target;
+        goToResults(form && form.querySelector ? form.querySelector("input") : null);
+      },
+      true,
+    );
     dialog.addEventListener("click", function (e) {
       if (e.target === dialog) dialog.close();
     });
