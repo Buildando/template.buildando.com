@@ -384,15 +384,16 @@ There is no running service to observe. The signals are:
   viewport (~360px) for wrapping, tap-target size, horizontal overflow, and the
   sticky header. The layout uses flex-wrap and relative units throughout, but this
   has not been verified end-to-end on a real small screen.
-- **To do: ship a few alternate visual identities selectable by CSS alone, plus a
-  customization guide.** The theme is already token-driven (colors, fonts, radii,
-  spacing in CSS custom properties), so a fork can restyle without touching
-  components. Provide 2–3 example "skins" as swappable token sets — e.g. a light
-  editorial serif look and a high-contrast mono look, distinct from the default —
-  and a short guide (README + comments in `global.css`) naming which custom
-  properties to change. The goal: choosing an existing identity or authoring a new
-  one is a CSS-only change, so people adopting the template can make it their own
-  without editing markup.
+- **Done: alternate visual identities ("skins").** The look is a token preset in
+  `src/config/skins.ts` — a light+dark palette, three fonts, and the content width
+  — chosen by `ACTIVE_SKIN` in `site.ts` and injected as CSS custom properties, so
+  there is one source of truth (no parallel stylesheet). Five skins ship:
+  `terminal` (default), `editorial` (serif), `mono` (monospace), `minimal`, and
+  `warmDev` (Solarized), each with light and dark. Switching is one line; authoring
+  is copying a preset and editing token values. A "Skins" section in `README.md`
+  documents the tokens and how to switch or author one, and `test/skins.test.ts`
+  asserts every skin is a complete preset. Post covers are content, not theme, so
+  they don't follow the skin.
 - **Social share buttons — done (`REQ-040`).** Static share-intent links (X,
   WhatsApp, Telegram, LinkedIn, Facebook) plus a JS-gated "copy link", at the end of
   each post, config-driven via `SHARE`. The native Web Share API was not added; it

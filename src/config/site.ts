@@ -13,6 +13,8 @@
  *   4. Set the GitHub Actions deploy secrets (see .github/workflows/deploy.yml).
  */
 
+import { SKINS, type SkinName } from "./skins";
+
 export const SITE = {
   /** Brand name, shown in the header and used across SEO output. */
   name: "Buildando",
@@ -35,41 +37,17 @@ export const SITE = {
 } as const;
 
 /**
- * Design tokens. Injected as CSS custom properties by BaseLayout (REQ-009).
- * Two palettes: `light` is the base, `dark` overrides under
- * prefers-color-scheme: dark. No toggle, no JS — the OS preference decides.
- * Fonts are self-hosted (Fontsource), so there is no external request.
+ * Visual identity. The whole look — light + dark palettes, fonts, content width —
+ * is a "skin": a named preset of design tokens in ./skins.ts, injected as CSS
+ * custom properties by BaseLayout (REQ-009). `light` is the base; `dark` overrides
+ * under prefers-color-scheme: dark and the theme toggle.
+ *
+ * Switch identity by setting ACTIVE_SKIN to any key in SKINS — "terminal"
+ * (default), "editorial", "mono", "minimal", or "warmDev". Craft your own by
+ * copying a preset in ./skins.ts. See the "Skins" section in README.md.
  */
-export const BRAND = {
-  colors: {
-    light: {
-      bg: "#ffffff",
-      surface: "#f6f7f9",
-      text: "#141821",
-      muted: "#5b6472",
-      accent: "#2f6df6",
-      accentContrast: "#ffffff",
-      border: "#e6e9ef",
-    },
-    dark: {
-      bg: "#0d0f14",
-      surface: "#161a22",
-      text: "#e7eaf0",
-      muted: "#98a1b3",
-      accent: "#6ea0ff",
-      accentContrast: "#0d0f14",
-      border: "#232936",
-    },
-  },
-  fonts: {
-    body: '"Inter Variable", system-ui, -apple-system, Segoe UI, Roboto, sans-serif',
-    heading:
-      '"Space Grotesk Variable", "Inter Variable", system-ui, sans-serif',
-    mono: "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
-  },
-  /** Max content width for the reading column. */
-  contentWidth: "46rem",
-} as const;
+export const ACTIVE_SKIN: SkinName = "terminal";
+export const BRAND = SKINS[ACTIVE_SKIN];
 
 /**
  * Social profile links, rendered as icons in the footer. `icon` is a simple-icons

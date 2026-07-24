@@ -125,13 +125,58 @@ See `src/content/config.ts` for the full schema.
    `src/i18n/ui.ts`. Each post declares its language with `lang:` and links its
    translations with `translations:`. Single language? Keep just one locale in `I18N`.
 5. **Theme**: set `THEME.default` to `"light"` or `"dark"`, or
-   `THEME.allowToggle: false` to lock it and hide the toggle.
+   `THEME.allowToggle: false` to lock it and hide the toggle. To change the whole
+   visual identity, pick a skin — see [Skins](#skins-visual-identity).
 6. **Home hero**: edit `src/content/home/<locale>.md` (e.g. `pt.md`, `en.md`) —
    free-form markdown rendered with the site's CSS. Without the file, the home
    falls back to the site name + description.
 
 No other file carries identity — if `buildando`, the domain, or the author appear
 outside the config, it's a bug (that's what `REQ-030` guarantees).
+
+## Skins (visual identity)
+
+The whole look — light and dark palettes, the three fonts, and the reading-column
+width — is a **skin**: a named preset of design tokens in `src/config/skins.ts`.
+`site.ts` selects one with `ACTIVE_SKIN` and exports it as `BRAND`, which the layout
+injects as CSS custom properties. It is the single source of truth for the look —
+there is no separate stylesheet to keep in sync.
+
+**Switch identity** — one line in `src/config/site.ts`:
+
+```ts
+export const ACTIVE_SKIN: SkinName = "editorial";
+```
+
+Shipped skins, each with a light **and** a dark palette (the theme toggle switches
+between them):
+
+| Skin | Look |
+| --- | --- |
+| `terminal` | default — dark-first, blue accent, Inter + Space Grotesk |
+| `editorial` | serif headings, warm paper and ink, green accent |
+| `mono` | monospace headings, high contrast, amber accent |
+| `minimal` | near-monochrome, airy, a single lime accent |
+| `warmDev` | the Solarized palette, cozy and familiar |
+
+**Make your own** — copy a preset in `src/config/skins.ts`, rename its key, and
+edit the values. Every value is a plain CSS value, so customizing the look is just
+editing these tokens:
+
+| Token | What it colors |
+| --- | --- |
+| `bg` | page background |
+| `surface` | raised panels (filter bar, search box, dialog) |
+| `text` | body text |
+| `muted` | secondary text (dates, captions) |
+| `accent` | links, buttons, highlights |
+| `accentContrast` | text/icon drawn on top of `accent` |
+| `border` | hairlines and dividers |
+
+`fonts` sets `body`, `heading`, and `mono`; `contentWidth` is the reading column.
+For a brand-new typeface, self-host it (e.g. via Fontsource) and add it to the
+stack. Post cover images are content, not theme, so they don't change with the
+skin — use covers that suit your palette.
 
 ## Analytics and ads
 
