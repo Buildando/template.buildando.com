@@ -164,13 +164,17 @@ describe("pure logic stays unit-testable (architecture)", () => {
 });
 
 describe("identity confined to the config surface (REQ-030)", () => {
-  it("the domain appears in src only inside config/site.ts", () => {
+  it("the domain appears in src code only inside config/site.ts", () => {
     const host = new URL(SITE.url).host; // whatever a fork configures
     const offenders: string[] = [];
     const walk = (dir: string) => {
       for (const entry of readdirSync(dir, { withFileTypes: true })) {
         const full = join(dir, entry.name);
         if (entry.isDirectory()) {
+          // Example content (posts, home) is authored prose a forker replaces —
+          // the rule guards the reusable code, not the sample content (which may
+          // legitimately name the template's own repo, e.g. in the install guide).
+          if (full === join(src, "content")) continue;
           walk(full);
         } else if (/\.(astro|ts|js|md)$/.test(entry.name)) {
           if (full.endsWith(join("config", "site.ts"))) continue;

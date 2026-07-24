@@ -225,7 +225,7 @@ seo:         default OG image, locale/language
 analytics:   optional privacy-friendly analytics id (empty disables it)
 ```
 
-The contract is negative as much as positive: no other file may read a HostGator, Buildando, author, or repository identity. Where a component needs the site name or domain, it imports it from here. This is what `REQ-030` asserts and what an architecture test should guard.
+The contract is negative as much as positive: no other **code** file may hardcode the domain, author, or repository identity — where a component needs the site name or domain, it imports it from here. Example **content** (posts, the home hero) is exempt: it is authored prose a fork replaces, and may legitimately name the template's own repo (e.g. the clone URL in the install guide). This is what `REQ-030` asserts and what the architecture test guards (scanning `src` code, skipping `src/content`).
 
 ### Deployment Contract
 

@@ -42,7 +42,7 @@ const svg = ({ eyebrow, titleLines, subtitle, glyph, accent, ink, muted }) => `
   <rect width="14" height="${H}" fill="${accent}"/>              <!-- left accent bar -->
   <!-- brand mark + wordmark, top-left -->
   <g transform="translate(72,58)">${BRAND_MARK}
-    <text x="58" y="30" font-family="sans-serif" font-size="30" font-weight="700" fill="${ink}">Buildando</text>
+    <text x="58" y="30" font-family="sans-serif" font-size="30" font-weight="700" fill="${ink}">${wordmark}</text>
   </g>
   <!-- topic glyph, right -->
   <g transform="translate(860,205)" stroke="${accent}" stroke-width="8" fill="none"

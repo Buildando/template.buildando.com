@@ -17,10 +17,13 @@ colocar o seu no ar e deixá-lo com a sua cara.
 
 ## 1. Pegue o template
 
-No GitHub, clique em **"Use this template" → Create a new repository** (ou faça um
-fork). Depois, no seu computador:
+O template vive em **github.com/Buildando/template.buildando.com**. Lá, clique em
+**"Use this template" → Create a new repository** (ou faça um fork). Depois, clone
+o **seu** repositório e instale:
 
 ```bash
+git clone https://github.com/SEU-USUARIO/SEU-REPO.git
+cd SEU-REPO
 npm install
 npm run dev      # servidor local, com recarga automática
 ```
@@ -30,8 +33,8 @@ Abra `http://localhost:4321` e você já verá o blog rodando. Requer Node 22+.
 ## 2. A única superfície de configuração
 
 Quase tudo que é "seu" mora em **um arquivo**: `src/config/site.ts`. É lá que você
-edita nome, domínio, autor, **cores**, fontes, **redes sociais**, navegação,
-idiomas e as integrações (comentários, busca, analytics).
+edita nome, domínio, autor, a **skin** (cores e fontes — veja a seção 5), **redes
+sociais**, navegação, idiomas e as integrações (comentários, busca, analytics).
 
 ```ts
 export const SITE = {
@@ -67,7 +70,32 @@ visual. Sem esse arquivo, a home cai no nome do site + descrição.
 A página **Sobre** vive em `src/pages/[lang]/about.astro`. O texto por idioma está
 logo no topo do arquivo — troque pelo seu. O link no menu já aponta para ela.
 
-## 5. Ajustes rápidos comuns
+## 5. Identidade visual (skins)
+
+A cara do blog — paletas light/dark, fontes e largura de leitura — é uma **skin**:
+um preset de tokens em `src/config/skins.ts`. Trocar de identidade é **uma linha**
+no `site.ts`:
+
+```ts
+export const ACTIVE_SKIN: SkinName = "editorial";
+```
+
+Já vêm prontas seis:
+
+- **`terminal`** — padrão: escuro, acento azul, Inter + Space Grotesk
+- **`editorial`** — títulos em serifa, papel quente, acento verde
+- **`mono`** — títulos monoespaçados, alto contraste, acento âmbar
+- **`minimal`** — quase monocromático, acento lime discreto
+- **`warmDev`** — a paleta Solarized
+- **`brutalist`** — radical: bordas duras, cantos retos, sombras offset, acento violeta
+
+Cada uma vem com light **e** dark (o botão de tema alterna). Para criar a sua,
+copie um preset em `skins.ts` e edite os valores — são CSS puro. Uma skin pode até
+mudar **estrutura** (não só cor): regras escopadas por `[data-skin="nome"]` em
+`src/styles/skins.css` — a `brutalist` é o exemplo. Mais detalhes na seção
+**Skins** do `README`.
+
+## 6. Ajustes rápidos comuns
 
 - **Tema padrão**: `THEME.default` (`"dark"` ou `"light"`), ou trave com `allowToggle: false`.
 - **Idiomas**: adicione/remova em `I18N` e traduza as strings em `src/i18n/ui.ts`.
@@ -77,7 +105,7 @@ logo no topo do arquivo — troque pelo seu. O link no menu já aponta para ela.
 - **Analytics, anúncios, newsletter, compartilhar**: cada um é opt-in num bloco de
   config; vazio = não aparece.
 
-## 6. Publicando
+## 7. Publicando
 
 `npm run build` gera a pasta `dist/` estática, que serve em **qualquer**
 hospedagem. O template já inclui um workflow de deploy automático via GitHub
