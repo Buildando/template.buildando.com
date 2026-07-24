@@ -173,8 +173,12 @@ export const ANALYTICS = {
  */
 export const CONSENT = {
   required: true,
-  /** Optional privacy-policy URL linked in the banner. Empty hides the link. */
-  privacyUrl: "",
+  /** Optional privacy-policy URL linked in the banner. Empty hides the link.
+      A path starting with "/" is resolved per locale; an absolute URL is used as is. */
+  privacyUrl: "/privacy",
+  /** Address the privacy policy gives for data-subject requests (LGPD art. 18).
+      Empty falls back to pointing the reader at the About page. */
+  contact: "",
 } as const;
 
 /**

@@ -5,7 +5,7 @@
 // required. `gated` (from the Analytics port) says whether any such provider is
 // configured; when false, nothing renders, so the default build stays clean.
 import { CONSENT } from "../../config/site";
-import { useTranslations } from "../../i18n";
+import { useTranslations, localizedPath } from "../../i18n";
 
 interface Props {
   lang: string;
@@ -14,20 +14,65 @@ interface Props {
 const { lang, gated } = Astro.props;
 const t = useTranslations(lang);
 
+// A site-relative policy path is resolved to the reader's locale — a bilingual
+// site would otherwise link one language's policy from both banners. An absolute
+// URL (a policy hosted elsewhere) is left untouched.
+const privacyHref = CONSENT.privacyUrl.startsWith("/")
+  ? localizedPath(lang, CONSENT.privacyUrl)
+  : CONSENT.privacyUrl;
+
+// Withdrawing consent has to be as easy as giving it (LGPD art. 8 §5, GDPR art. 7.3),
+// so the decision is re-openable from the footer at any time. Rejecting after having
+// accepted also expires the analytics cookies already set and reloads, since a script
+// already running cannot be unloaded — otherwise "reject" would only apply next visit.
 const consentScript = `(function(){
   function runAll(){ (window.__consentLoaders||[]).forEach(function(fn){ try{fn();}catch(e){} }); }
+  function read(){ try{ return localStorage.getItem("consent"); }catch(e){ return null; } }
+  function write(v){ try{ v===null?localStorage.removeItem("consent"):localStorage.setItem("consent",v); }catch(e){} }
+  function dropCookies(){
+    // A cookie is only erased by a delete that matches its own path and domain, so
+    // try every ancestor path of the current URL, not just "/". (A cookie scoped to
+    // a sibling path is not even readable from here, so it cannot be touched.)
+    var host=location.hostname, paths=["/"], acc="";
+    location.pathname.split("/").forEach(function(seg){
+      if(!seg) return; acc+="/"+seg; paths.push(acc, acc+"/");
+    });
+    document.cookie.split(";").forEach(function(c){
+      var name=c.split("=")[0].trim();
+      if(name.indexOf("_ga")!==0 && name.indexOf("_gid")!==0) return;
+      paths.forEach(function(p){
+        var base=name+"=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path="+p;
+        document.cookie=base;
+        document.cookie=base+"; domain="+host;
+        document.cookie=base+"; domain=."+host;
+      });
+    });
+  }
   var required=${CONSENT.required ? "true" : "false"};
-  var decision=null; try{ decision=localStorage.getItem("consent"); }catch(e){}
-  if(!required){ runAll(); return; }
-  if(decision==="granted"){ runAll(); return; }
-  if(decision==="denied"){ return; }
   var banner=document.getElementById("consent-banner");
-  if(!banner) return;
-  banner.hidden=false;
-  function decide(v){ try{ localStorage.setItem("consent", v); }catch(e){} banner.hidden=true; if(v==="granted") runAll(); }
+  var reset=document.getElementById("consent-reset");
+  var started=false;
+
+  function decide(v){
+    write(v);
+    if(banner) banner.hidden=true;
+    if(v==="granted"){ if(!started){ started=true; runAll(); } return; }
+    // "started" — not the stored decision — is what says the tag is running in this
+    // page: reopening the preferences clears the decision before you choose again.
+    if(started){ dropCookies(); location.reload(); }
+  }
+  function open(){ if(banner){ banner.hidden=false; banner.scrollIntoView({block:"nearest"}); } }
+
+  if(reset) reset.addEventListener("click", function(){ write(null); open(); });
   var a=document.getElementById("consent-accept"), r=document.getElementById("consent-reject");
   if(a) a.addEventListener("click", function(){ decide("granted"); });
   if(r) r.addEventListener("click", function(){ decide("denied"); });
+
+  if(!required){ started=true; runAll(); return; }
+  var decision=read();
+  if(decision==="granted"){ started=true; runAll(); return; }
+  if(decision==="denied") return;
+  open();
 })();`;
 ---
 
@@ -41,7 +86,7 @@ const consentScript = `(function(){
             {CONSENT.privacyUrl && (
               <>
                 {" "}
-                <a href={CONSENT.privacyUrl}>{t("consent.privacy")}</a>
+                <a href={privacyHref}>{t("consent.privacy")}</a>
               </>
             )}
           </p>
@@ -61,6 +106,12 @@ const consentScript = `(function(){
 }
 
 <style>
+  /* `display: flex` below outranks the browser's own [hidden] rule, so without
+     this the banner stays on screen after a decision — hidden in the DOM, visible
+     to the reader. */
+  .consent[hidden] {
+    display: none;
+  }
   .consent {
     position: fixed;
     left: 1rem;

@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync, existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
-import { SITE } from "../src/config/site";
+import { SITE, ANALYTICS, CONSENT } from "../src/config/site";
 import { locales, defaultLocale, localeMeta, useTranslations } from "../src/i18n";
 
 // Absolute SEO URLs derive from the one configured origin (REQ-018), so a fork
@@ -229,12 +229,26 @@ describe.skipIf(!built)("build output", () => {
     expect(has("pagefind", "pagefind.js")).toBe(true);
   });
 
-  it("emits no analytics/ads/consent by default (REQ-038, REQ-042)", () => {
+  it("ships exactly the analytics that are configured (REQ-038, REQ-042)", () => {
     const html = read(defaultLocale, "index.html");
-    expect(html).not.toContain("googletagmanager.com");
-    expect(html).not.toContain("adsbygoogle");
-    expect(html).not.toContain("plausible.io");
-    expect(html).not.toContain('id="consent-banner"');
+    // Each provider is opt-in: present when its id is set, absent when it is not.
+    // Asserting equality (not just absence) keeps this honest whether a fork has
+    // analytics off — the default — or on.
+    expect(html.includes("plausible.io")).toBe(Boolean(ANALYTICS.plausible));
+    expect(html.includes("googletagmanager.com")).toBe(Boolean(ANALYTICS.googleAnalytics));
+    expect(html.includes("adsbygoogle")).toBe(Boolean(ANALYTICS.adsense));
+
+    const gated = Boolean(ANALYTICS.googleAnalytics || ANALYTICS.adsense);
+    expect(html.includes('id="consent-banner"')).toBe(gated && CONSENT.required);
+    // Consent must be as easy to withdraw as to give, so the control that reopens
+    // the decision ships wherever the banner does.
+    expect(html.includes('id="consent-reset"')).toBe(gated && CONSENT.required);
+    if (gated) {
+      // The cookie-setting tag is only registered on the consent queue — the page
+      // itself must never load it, or consent would be decorative.
+      expect(html).not.toMatch(/<script[^>]+src="https:\/\/www\.googletagmanager\.com/);
+      expect(html).toContain("__consentLoaders");
+    }
   });
 
   it("renders no newsletter form by default (REQ-039)", () => {

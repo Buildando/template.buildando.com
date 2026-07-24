@@ -1,0 +1,247 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { SITE, CONSENT, ANALYTICS, INTEGRATIONS } from "../../config/site";
+import {
+  locales,
+  useTranslations,
+  localizedPath,
+  hreflangAlternates,
+} from "../../i18n";
+
+export function getStaticPaths() {
+  return locales.map((lang) => ({ params: { lang } }));
+}
+
+const { lang } = Astro.params;
+const t = useTranslations(lang);
+
+/**
+ * The policy describes what this build actually does, so it is assembled from the
+ * same configuration the site runs on: a section about analytics appears only when
+ * analytics is configured. A fork that leaves it off gets a policy that does not
+ * claim otherwise. Identity values (contact, domain) come from the config surface,
+ * never spelled out here (REQ-030).
+ */
+const ga = Boolean(ANALYTICS.googleAnalytics);
+const plausible = Boolean(ANALYTICS.plausible);
+const ads = Boolean(ANALYTICS.adsense);
+const giscus = INTEGRATIONS.comments === "giscus";
+const contact = CONSENT.contact;
+
+const path = CONSENT.privacyUrl || "/privacy";
+
+const metaDesc: Record<string, string> = {
+  pt: "O que este blog coleta, o que não coleta, e como você controla — de forma verificável e sem letras miúdas.",
+  en: "What this blog collects, what it does not, and how you control it — verifiable, and without fine print.",
+};
+
+const updated: Record<string, string> = {
+  pt: "Última atualização: 24 de julho de 2026",
+  en: "Last updated: July 24, 2026",
+};
+
+const intro: Record<string, string> = {
+  pt: "Este site é um blog estático: não tem backend, cadastro, login nem formulário. Por isso a lista do que é coletado é curta, e ela está descrita abaixo exatamente como o site funciona.",
+  en: "This site is a static blog: no backend, no accounts, no login, no forms. That makes the list of what is collected a short one, and it is described below exactly as the site behaves.",
+};
+
+type Section = { h: string; p: string[] };
+const sections: Record<string, Section[]> = { pt: [], en: [] };
+
+// 1. Controller
+sections.pt.push({
+  h: "Quem é o responsável",
+  p: [
+    `${SITE.author} é o responsável pelo tratamento dos dados descritos aqui.` +
+      (contact
+        ? ` Para qualquer pedido relativo aos seus dados, escreva para ${contact}.`
+        : " Para qualquer pedido relativo aos seus dados, use os canais de contato da página Sobre."),
+  ],
+});
+sections.en.push({
+  h: "Who is responsible",
+  p: [
+    `${SITE.author} is responsible for the processing described here.` +
+      (contact
+        ? ` For any request about your data, write to ${contact}.`
+        : " For any request about your data, use the contact channels on the About page."),
+  ],
+});
+
+// 2. What the site itself stores
+sections.pt.push({
+  h: "O que o site coleta por conta própria",
+  p: [
+    "Nada. Não existe banco de dados, conta de usuário nem formulário neste site.",
+    "O que o seu navegador guarda fica no seu navegador e nunca é enviado a lugar algum: a preferência de tema (claro ou escuro) e, quando aplicável, a sua decisão sobre cookies.",
+  ],
+});
+sections.en.push({
+  h: "What the site collects on its own",
+  p: [
+    "Nothing. There is no database, no user account and no form on this site.",
+    "What your browser stores stays in your browser and is never sent anywhere: your theme preference (light or dark) and, where applicable, your cookie decision.",
+  ],
+});
+
+// 3. Analytics — only when something is configured
+if (ga || plausible || ads) {
+  const gated = ga || ads;
+  const ptParts = [
+    ga
+      ? "O Google Analytics só é carregado depois que você aceita no banner de cookies. Se você recusar, ele não é carregado."
+      : "",
+    ga
+      ? "Uma vez aceito, o Google Analytics 4 recebe dados de navegação: páginas visitadas, origem do acesso, tipo de dispositivo, navegador, idioma e localização aproximada derivada do endereço IP. Ele também grava cookies próprios no seu navegador, e esses dados passam a ser tratados pelo Google conforme a política de privacidade dele."
+      : "",
+    plausible
+      ? "A medição de audiência usa o Plausible, que não grava cookies e não coleta dados pessoais: ele conta visitas de forma agregada."
+      : "",
+    ads ? "Os anúncios são servidos pelo Google AdSense, que grava cookies próprios após o seu aceite." : "",
+    gated
+      ? "A base legal é o seu consentimento (LGPD, art. 7º, I). Você pode mudar de ideia a qualquer momento pelo link “Preferências de cookies” no rodapé de qualquer página: ele reabre o banner. Ao recusar depois de ter aceitado, os cookies de análise já gravados são apagados e a página é recarregada, para que nada continue rodando na sessão."
+      : "",
+  ].filter(Boolean);
+  const enParts = [
+    ga
+      ? "Google Analytics is loaded only after you accept it in the cookie banner. If you decline, it is not loaded."
+      : "",
+    ga
+      ? "Once accepted, Google Analytics 4 receives browsing data: pages visited, referrer, device type, browser, language and an approximate location derived from your IP address. It also writes its own cookies in your browser, and that data is then processed by Google under its own privacy policy."
+      : "",
+    plausible
+      ? "Audience measurement uses Plausible, which sets no cookies and collects no personal data: it counts visits in aggregate."
+      : "",
+    ads ? "Ads are served by Google AdSense, which writes its own cookies after you accept." : "",
+    gated
+      ? "The legal basis is your consent. You can change your mind at any time through the “Cookie preferences” link in the footer of any page, which reopens the banner. Declining after having accepted also expires the analytics cookies already set and reloads the page, so nothing keeps running in that session."
+      : "",
+  ].filter(Boolean);
+  sections.pt.push({ h: "Análise de acesso", p: ptParts });
+  sections.en.push({ h: "Analytics", p: enParts });
+}
+
+// 4. Comments — only when a provider is wired
+if (giscus) {
+  sections.pt.push({
+    h: "Comentários",
+    p: [
+      "Os comentários usam o giscus, que exibe discussões do GitHub dentro da página. Ao rolar até a área de comentários, o seu navegador carrega conteúdo de giscus.app — e, como em qualquer requisição, isso expõe o seu endereço IP e o seu navegador a esse serviço.",
+      "Para comentar é preciso autorizar o aplicativo do giscus na sua conta do GitHub. O comentário é publicado publicamente no repositório de discussões do blog e fica sujeito às políticas do GitHub. Eu não tenho acesso às suas credenciais.",
+    ],
+  });
+  sections.en.push({
+    h: "Comments",
+    p: [
+      "Comments use giscus, which renders GitHub Discussions inside the page. When you scroll to the comments area, your browser loads content from giscus.app — and, as with any request, that exposes your IP address and browser to that service.",
+      "Commenting requires authorizing the giscus app on your GitHub account. The comment is published publicly in the blog's discussions repository and is subject to GitHub's policies. I have no access to your credentials.",
+    ],
+  });
+}
+
+// 5. What does not happen
+sections.pt.push({
+  h: "O que não acontece aqui",
+  p: [
+    ads ? "" : "Não há anúncios.",
+    "Não há newsletter nem qualquer coleta de e-mail.",
+    "As fontes são servidas pelo próprio domínio, então nenhuma requisição a serviços de fontes de terceiros é feita.",
+    "A busca roda inteiramente no seu navegador, sobre um índice estático: o que você digita não é enviado a servidor nenhum.",
+    "Os ícones de redes sociais e os botões de compartilhar são apenas links. Nada é requisitado a esses serviços a menos que você clique.",
+  ].filter(Boolean),
+});
+sections.en.push({
+  h: "What does not happen here",
+  p: [
+    ads ? "" : "There are no ads.",
+    "There is no newsletter and no email collection of any kind.",
+    "Fonts are served from this domain, so no request is made to third-party font services.",
+    "Search runs entirely in your browser against a static index: what you type is never sent to a server.",
+    "Social icons and share buttons are plain links. Nothing is requested from those services unless you click.",
+  ].filter(Boolean),
+});
+
+// 6. Hosting
+sections.pt.push({
+  h: "Hospedagem",
+  p: [
+    "O site é estático e servido por um provedor de hospedagem comum. Como qualquer servidor web, a hospedagem mantém registros técnicos de acesso — endereço IP, data e hora, página requisitada e navegador — para operação e segurança. Esses registros não são usados para traçar perfis.",
+  ],
+});
+sections.en.push({
+  h: "Hosting",
+  p: [
+    "The site is static and served by an ordinary hosting provider. Like any web server, the host keeps technical access logs — IP address, date and time, requested page and browser — for operation and security. Those logs are not used for profiling.",
+  ],
+});
+
+// 7. Rights
+sections.pt.push({
+  h: "Seus direitos",
+  p: [
+    "A LGPD (art. 18) garante confirmação da existência de tratamento, acesso, correção, anonimização ou eliminação, portabilidade e revogação do consentimento. Se você estiver na União Europeia, valem os direitos equivalentes do GDPR.",
+    "Na prática, como este site não mantém cadastro, os dados que podem existir sobre você estão nos serviços de terceiros descritos acima — e só naqueles que você tiver acionado." +
+      (contact ? ` Para exercer qualquer desses direitos, escreva para ${contact}.` : ""),
+  ],
+});
+sections.en.push({
+  h: "Your rights",
+  p: [
+    "Brazil's LGPD (art. 18) grants confirmation of processing, access, correction, anonymization or deletion, portability, and withdrawal of consent. If you are in the European Union, the equivalent GDPR rights apply.",
+    "In practice, since this site keeps no accounts, whatever data exists about you lives in the third-party services described above — and only in the ones you actually triggered." +
+      (contact ? ` To exercise any of these rights, write to ${contact}.` : ""),
+  ],
+});
+
+// 8. Changes
+sections.pt.push({
+  h: "Mudanças nesta política",
+  p: [
+    "Alterações valem a partir da publicação, e a data no topo indica a última revisão. Como o site é versionado em git, o histórico das mudanças é público.",
+  ],
+});
+sections.en.push({
+  h: "Changes to this policy",
+  p: [
+    "Changes take effect when published, and the date at the top marks the last revision. Since the site is versioned in git, the history of those changes is public.",
+  ],
+});
+
+const body = sections[lang] ?? sections.pt;
+---
+
+<BaseLayout
+  title={t("privacy.title")}
+  description={metaDesc[lang] ?? metaDesc.pt}
+  path={localizedPath(lang, path)}
+  lang={lang}
+  alternates={hreflangAlternates(path)}
+>
+  <h1>{t("privacy.title")}</h1>
+  <p class="updated">{updated[lang] ?? updated.pt}</p>
+
+  <div class="prose">
+    <p>{intro[lang] ?? intro.pt}</p>
+    {
+      body.map((s) => (
+        <section>
+          <h2>{s.h}</h2>
+          {s.p.map((p) => (
+            <p>{p}</p>
+          ))}
+        </section>
+      ))
+    }
+  </div>
+</BaseLayout>
+
+<style>
+  .updated {
+    margin: 0.35rem 0 0;
+    color: var(--color-muted);
+    font-size: 0.95rem;
+  }
+  .prose {
+    margin-top: 2rem;
+  }
+</style>

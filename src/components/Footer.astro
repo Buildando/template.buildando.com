@@ -1,5 +1,5 @@
 ---
-import { SITE, SOCIAL } from "../config/site";
+import { SITE, SOCIAL, CONSENT, ANALYTICS } from "../config/site";
 import { useTranslations, localizedPath } from "../i18n";
 import Icon from "./Icon.astro";
 
@@ -9,11 +9,38 @@ interface Props {
 const { lang } = Astro.props;
 const t = useTranslations(lang);
 const year = new Date().getFullYear();
+
+// Shown only when there is a consent decision to manage — i.e. a cookie-setting
+// provider is configured and consent is required. The ConsentBanner script wires it.
+const canManageConsent =
+  CONSENT.required && Boolean(ANALYTICS.googleAnalytics || ANALYTICS.adsense);
 ---
 
 <footer class="site-footer">
   <div class="wrap">
-    <p>© {year} {SITE.author}</p>
+    <p>
+      © {year} {SITE.author}
+      {
+        CONSENT.privacyUrl.startsWith("/") && (
+          <>
+            {" · "}
+            <a class="footer-link" href={localizedPath(lang, CONSENT.privacyUrl)}>
+              {t("footer.privacy")}
+            </a>
+          </>
+        )
+      }
+      {
+        canManageConsent && (
+          <>
+            {" · "}
+            <button id="consent-reset" type="button" class="footer-link footer-button">
+              {t("consent.manage")}
+            </button>
+          </>
+        )
+      }
+    </p>
     <ul class="social">
       {SOCIAL.map((s) => (
         <li>
@@ -44,6 +71,20 @@ const year = new Date().getFullYear();
 </footer>
 
 <style>
+  .footer-link {
+    color: inherit;
+  }
+  .footer-button {
+    font: inherit;
+    padding: 0;
+    border: 0;
+    background: none;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+  .footer-link:hover {
+    color: var(--color-accent);
+  }
   .site-footer {
     border-top: 1px solid var(--color-border);
     margin-top: 4rem;
