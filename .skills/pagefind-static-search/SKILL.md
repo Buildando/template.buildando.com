@@ -1,6 +1,6 @@
 ---
 name: pagefind-static-search
-description: Use when adding full-text search to a static site with no backend — Pagefind indexes built HTML at build time and runs entirely in the browser against static files.
+description: Use when adding full-text search to a static site with no backend — Pagefind indexes built HTML at build time and runs in the browser. Covers scoping the index (e.g. posts only), rendering results as your own cards via the JS API, and the mobile Enter/submit gotcha.
 ---
 
 # Pagefind (static full-text search)
@@ -20,7 +20,7 @@ shipping the whole index to every visitor.
 
 Install `pagefind` as a devDependency. It indexes `**/*.html` in `dist`.
 
-## Wiring the UI
+## Prebuilt UI (fast path — good for a live preview)
 
 The Pagefind assets exist only in `dist` after the build, never in `astro dev`.
 So the loader must not be bundle-resolved — use an **inline** script and a dynamic
@@ -42,16 +42,53 @@ import:
 `is:inline` is essential: without it, Vite/Rollup tries to resolve
 `/pagefind/pagefind-ui.js` at build time and fails, because it does not exist yet.
 
-## Scoping and drafts
+## Scope the index — e.g. posts only
 
-- Add `data-pagefind-body` to the main content element to index only that region;
-  otherwise Pagefind indexes each page's whole `<body>`.
-- Drafts excluded from the build produce no HTML, so they are never indexed — no
-  extra step needed.
-- Facet filtering can use `data-pagefind-filter` attributes if you want faceted
-  search inside Pagefind, but tag/category **pages** are simpler and work JS-off.
+By default Pagefind indexes each page's whole `<body>`. Add `data-pagefind-body`
+to the element you want indexed and **Pagefind then ignores every page that lacks
+it** — so putting it only on the post article indexes posts and drops category,
+tag, month, home, and about pages from search. Skip it on fallback/duplicate pages
+so the same content isn't indexed twice. Drafts excluded from the build produce no
+HTML, so they're never indexed.
+
+Carry the fields your result cards need with `data-pagefind-meta` (the page title
+is captured automatically; you name the rest):
+
+```html
+<time data-pagefind-meta="date">22 Jul 2026</time>
+<a … data-pagefind-meta="category">Guide</a>
+<img … data-pagefind-meta="image[src]" />      <!-- capture an attribute -->
+<ul data-pagefind-meta="tags:oo, tests">…</ul>  <!-- or an explicit value -->
+```
+
+## Results as your own cards — the JS API
+
+When the results should match your own listing (post cards, your pagination), skip
+`PagefindUI` and render the markup yourself from the **JS API**:
+
+```js
+const pf = await import("/pagefind/pagefind.js"); // inline script only
+const search = await pf.search(query);            // search.results: lazy handles
+const slice = await Promise.all(
+  search.results.slice(start, start + perPage).map((r) => r.data()),
+);
+// each fragment: { url, excerpt (HTML with <mark>), meta: { title, image, date, … } }
+```
+
+Paginate `search.results` client-side. Language comes from the page's
+`<html lang>`, so a per-locale `/search` searches that locale. Share the card/
+pagination CSS with your feed (e.g. in a global stylesheet) so server-rendered and
+client-rendered listings look identical.
+
+## Gotcha: Enter on mobile submits a form, not a keydown
+
+If Enter should open a results page, don't rely on a `keydown` listener alone: on
+mobile the keyboard's action key ("Search"/"Go") **submits Pagefind's `<form>`**
+rather than firing a usable keydown. Listen for the `submit` event too, in
+**capture** (before Pagefind's own handler), and reuse it for the desktop Enter.
 
 ## Verify
 
-After `npm run build`, assert `dist/pagefind/pagefind.js` exists and that a known
-term resolves to the expected page via the client index.
+After `npm run build`, assert `dist/pagefind/pagefind.js` exists, that scoped
+pages carry `data-pagefind-body` and other page types don't, and that a known term
+resolves to the expected page.
