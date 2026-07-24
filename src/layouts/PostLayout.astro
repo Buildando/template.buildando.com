@@ -67,15 +67,22 @@ const breadcrumbs = [
   breadcrumbs={breadcrumbs}
   langSwitch={langSwitch}
 >
-  <!-- The article body keeps its own language for correct pronunciation/indexing. -->
-  <article lang={isFallback ? localeMeta(contentLang).htmlLang : undefined}>
+  <!-- The article body keeps its own language for correct pronunciation/indexing.
+       Only canonical (non-fallback) post pages are indexed for search (REQ-020):
+       data-pagefind-body marks the post as the sole indexed content, so category,
+       tag, month, home and about pages stay out of results; data-pagefind-meta
+       carries the fields the search-result cards render. -->
+  <article
+    lang={isFallback ? localeMeta(contentLang).htmlLang : undefined}
+    data-pagefind-body={!isFallback ? true : undefined}
+  >
     <header class="post-header">
       <h1>{data.title}</h1>
       <p class="meta">
-        <time datetime={isoDate(data.publishDate)}>{formatDate(data.publishDate, uiLang)}</time>
+        <time datetime={isoDate(data.publishDate)} data-pagefind-meta="date">{formatDate(data.publishDate, uiLang)}</time>
         {data.updatedDate && <> · {t("post.updated")}{" "}{formatDate(data.updatedDate, uiLang)}</>}
         {data.category && (
-          <> · <a href={localizedPath(contentLang, `/categories/${data.category}/`)}>{data.category}</a></>
+          <> · <a href={localizedPath(contentLang, `/categories/${data.category}/`)} data-pagefind-meta="category">{data.category}</a></>
         )}
       </p>
     </header>
@@ -88,6 +95,7 @@ const breadcrumbs = [
           alt={data.coverAlt ?? ""}
           widths={[480, 800, 1200]}
           loading="eager"
+          data-pagefind-meta="image[src]"
         />
       )
     }
@@ -98,7 +106,7 @@ const breadcrumbs = [
 
     {
       data.tags.length > 0 && (
-        <ul class="tags">
+        <ul class="tags" data-pagefind-meta={`tags:${data.tags.join(", ")}`}>
           {data.tags.map((tag) => (
             <li><a href={localizedPath(contentLang, `/tags/${tag}/`)}>#{tag}</a></li>
           ))}

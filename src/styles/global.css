@@ -144,7 +144,7 @@ code {
   color: var(--color-accent-contrast);
 }
 
-/* Pagefind UI theming (used by the /search page and the search modal). */
+/* Pagefind UI theming (used by the search modal's live preview). */
 :root {
   --pagefind-ui-primary: var(--color-accent);
   --pagefind-ui-text: var(--color-text);
@@ -152,4 +152,90 @@ code {
   --pagefind-ui-border: var(--color-border);
   --pagefind-ui-tag: var(--color-bg);
   --pagefind-ui-font: var(--font-body);
+}
+
+/* Post cards and pagination — shared by the server-rendered feed (PostCard,
+   Pagination) and the client-rendered search results (/search) so both look the
+   same. Card rules are scoped under .card so they never touch the post article's
+   own .meta/.tags. */
+.card {
+  padding: 1.25rem 0;
+  border-bottom: 1px solid var(--color-border);
+}
+.card .cover img {
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin-bottom: 0.75rem;
+}
+.card h2 {
+  margin: 0 0 0.25rem;
+  font-size: 1.4rem;
+}
+.card h2 a {
+  color: var(--color-text);
+  text-decoration: none;
+}
+.card h2 a:hover {
+  color: var(--color-accent);
+}
+.card .meta {
+  color: var(--color-muted);
+  font-size: 0.85rem;
+  margin: 0 0 0.5rem;
+}
+.card .tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  list-style: none;
+  padding: 0;
+  margin: 0.5rem 0 0;
+  font-size: 0.85rem;
+}
+.card .tags a {
+  color: var(--color-muted);
+}
+.card mark {
+  background: color-mix(in srgb, var(--color-accent) 25%, transparent);
+  color: inherit;
+  border-radius: 3px;
+  padding: 0 0.1em;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--color-border);
+}
+.pg-btn {
+  font-size: 0.9rem;
+  font-family: inherit;
+  padding: 0.4rem 0.8rem;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: transparent;
+  text-decoration: none;
+  color: var(--color-text);
+  white-space: nowrap;
+  cursor: pointer;
+}
+a.pg-btn:hover,
+button.pg-btn:not(.disabled):hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+.pg-btn.disabled {
+  color: var(--color-muted);
+  opacity: 0.5;
+  cursor: default;
+}
+.pg-status {
+  font-size: 0.85rem;
+  color: var(--color-muted);
+  font-variant-numeric: tabular-nums;
 }

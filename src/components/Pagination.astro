@@ -36,37 +36,3 @@ const status = t("pagination.status")
     </nav>
   )
 }
-
-<style>
-  .pagination {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    margin-top: 2rem;
-    padding-top: 1.5rem;
-    border-top: 1px solid var(--color-border);
-  }
-  .pg-btn {
-    font-size: 0.9rem;
-    padding: 0.4rem 0.8rem;
-    border: 1px solid var(--color-border);
-    border-radius: 8px;
-    text-decoration: none;
-    color: var(--color-text);
-    white-space: nowrap;
-  }
-  a.pg-btn:hover {
-    border-color: var(--color-accent);
-    color: var(--color-accent);
-  }
-  .pg-btn.disabled {
-    color: var(--color-muted);
-    opacity: 0.5;
-  }
-  .pg-status {
-    font-size: 0.85rem;
-    color: var(--color-muted);
-    font-variant-numeric: tabular-nums;
-  }
-</style>

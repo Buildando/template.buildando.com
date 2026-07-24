@@ -1,6 +1,10 @@
 ---
+// Search results page (REQ-020, REQ-036). A form submits a query and the results
+// render as post cards with the same look and pagination as the home feed —
+// client-side, because Pagefind runs in the browser. Only posts are indexed
+// (data-pagefind-body lives on the post article), so results are posts only.
 import BaseLayout from "../../layouts/BaseLayout.astro";
-import Search from "../../integrations/Search.astro";
+import { SEARCH_PER_PAGE } from "../../config/site";
 import {
   locales,
   useTranslations,
@@ -14,15 +18,239 @@ export function getStaticPaths() {
 
 const { lang } = Astro.params;
 const t = useTranslations(lang);
+
+const searchPath = localizedPath(lang, "/search");
+const strings = {
+  loading: t("search.loading"),
+  results: t("search.results"),
+  none: t("search.none"),
+  prompt: t("search.prompt"),
+  prev: t("pagination.prev"),
+  next: t("pagination.next"),
+  status: t("pagination.status"),
+};
 ---
 
 <BaseLayout
   title={t("search.title")}
   description={t("search.title")}
-  path={localizedPath(lang, "/search")}
+  path={searchPath}
   lang={lang}
   alternates={hreflangAlternates("/search")}
 >
   <h1>{t("search.title")}</h1>
-  <Search id="search" lang={lang} />
+
+  <form class="search-form" role="search" action={searchPath} method="get">
+    <input
+      type="search"
+      name="q"
+      id="search-q"
+      placeholder={t("search.placeholder")}
+      aria-label={t("search.open")}
+      autocomplete="off"
+      enterkeyhint="search"
+    />
+    <button type="submit" class="search-submit">{t("search.button")}</button>
+  </form>
+
+  <p class="search-status" id="search-status" aria-live="polite" role="status"></p>
+  <div id="search-results"></div>
+  <nav id="search-pagination" aria-label={t("search.title")}></nav>
+
+  <script
+    is:inline
+    define:vars={{ lang, perPage: SEARCH_PER_PAGE, strings, searchPath }}
+  >
+    (function () {
+      var input = document.getElementById("search-q");
+      var statusEl = document.getElementById("search-status");
+      var resultsEl = document.getElementById("search-results");
+      var pagerEl = document.getElementById("search-pagination");
+      if (!input || !resultsEl) return;
+
+      var pf = null;
+      var results = []; // current Pagefind result handles
+      var query = "";
+
+      function esc(s) {
+        return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+          return {
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#39;",
+          }[c];
+        });
+      }
+
+      function getParams() {
+        var p = new URLSearchParams(location.search);
+        return { q: (p.get("q") || "").trim(), page: parseInt(p.get("page"), 10) || 1 };
+      }
+
+      function setUrl(q, page) {
+        var qs = "?q=" + encodeURIComponent(q) + (page > 1 ? "&page=" + page : "");
+        history.replaceState(null, "", searchPath + "/" + qs);
+      }
+
+      async function loadPagefind() {
+        if (pf) return pf;
+        pf = await import("/pagefind/pagefind.js");
+        if (pf.options) await pf.options({ language: lang });
+        return pf;
+      }
+
+      function cardHTML(f) {
+        var m = f.meta || {};
+        var cover = m.image
+          ? '<a href="' + esc(f.url) + '" class="cover"><img src="' + esc(m.image) +
+            '" alt="' + esc(m.image_alt || "") + '" loading="lazy"></a>'
+          : "";
+        var date = m.date ? "<time>" + esc(m.date) + "</time>" : "";
+        var cat = m.category ? " · " + esc(m.category) : "";
+        var tags = m.tags
+          ? '<ul class="tags">' +
+            m.tags
+              .split(",")
+              .map(function (tg) {
+                return "<li>#" + esc(tg.trim()) + "</li>";
+              })
+              .join("") +
+            "</ul>"
+          : "";
+        // f.excerpt is Pagefind-provided HTML with <mark> highlights (safe).
+        return (
+          '<article class="card">' + cover + '<div class="body">' +
+          '<h2><a href="' + esc(f.url) + '">' + esc(m.title || f.url) + "</a></h2>" +
+          '<p class="meta">' + date + cat + "</p>" +
+          "<p>" + (f.excerpt || "") + "</p>" +
+          tags +
+          "</div></article>"
+        );
+      }
+
+      function pagerHTML(page, lastPage) {
+        if (lastPage <= 1) return "";
+        var status = strings.status
+          .replace("{c}", String(page))
+          .replace("{t}", String(lastPage));
+        var prev =
+          page > 1
+            ? '<button class="pg-btn" type="button" data-page="' + (page - 1) + '" rel="prev">← ' + esc(strings.prev) + "</button>"
+            : '<span class="pg-btn disabled">← ' + esc(strings.prev) + "</span>";
+        var next =
+          page < lastPage
+            ? '<button class="pg-btn" type="button" data-page="' + (page + 1) + '" rel="next">' + esc(strings.next) + " →</button>"
+            : '<span class="pg-btn disabled">' + esc(strings.next) + " →</span>";
+        return (
+          '<div class="pagination">' + prev + '<span class="pg-status">' + status + "</span>" + next + "</div>"
+        );
+      }
+
+      async function renderPage(page) {
+        var lastPage = Math.max(1, Math.ceil(results.length / perPage));
+        if (page < 1) page = 1;
+        if (page > lastPage) page = lastPage;
+        var start = (page - 1) * perPage;
+        var slice = results.slice(start, start + perPage);
+        var data = await Promise.all(slice.map(function (r) { return r.data(); }));
+        resultsEl.innerHTML = data.map(cardHTML).join("");
+        pagerEl.innerHTML = pagerHTML(page, lastPage);
+        statusEl.textContent = strings.results
+          .replace("{n}", String(results.length))
+          .replace("{q}", query);
+        setUrl(query, page);
+      }
+
+      async function runSearch(q) {
+        query = q;
+        input.value = q;
+        if (!q) {
+          results = [];
+          resultsEl.innerHTML = "";
+          pagerEl.innerHTML = "";
+          statusEl.textContent = strings.prompt;
+          return;
+        }
+        statusEl.textContent = strings.loading;
+        try {
+          var api = await loadPagefind();
+          var search = await api.search(q);
+          results = search.results;
+          if (!results.length) {
+            resultsEl.innerHTML = "";
+            pagerEl.innerHTML = "";
+            statusEl.textContent = strings.none.replace("{q}", q);
+            return;
+          }
+        } catch (e) {
+          statusEl.textContent = strings.none.replace("{q}", q);
+          return;
+        }
+        var page = getParams().page;
+        await renderPage(page);
+      }
+
+      // Client-side pagination — re-slice, no reload.
+      pagerEl.addEventListener("click", function (e) {
+        var btn = e.target.closest("button[data-page]");
+        if (!btn) return;
+        renderPage(parseInt(btn.dataset.page, 10) || 1);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      });
+
+      // Submit re-runs in place (no full reload); the form still works without JS.
+      input.form.addEventListener("submit", function (e) {
+        e.preventDefault();
+        runSearch(input.value.trim());
+      });
+
+      // Initial run from the URL (?q= set by the modal's Enter or a direct link).
+      runSearch(getParams().q);
+    })();
+  </script>
 </BaseLayout>
+
+<style>
+  .search-form {
+    display: flex;
+    gap: 0.6rem;
+    margin: 1rem 0 1.5rem;
+  }
+  #search-q {
+    flex: 1;
+    font: inherit;
+    padding: 0.6rem 0.9rem;
+    color: var(--color-text);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+  }
+  #search-q:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 1px;
+  }
+  .search-submit {
+    font: inherit;
+    font-weight: 600;
+    padding: 0.6rem 1.1rem;
+    color: var(--color-accent-contrast);
+    background: var(--color-accent);
+    border: 1px solid var(--color-accent);
+    border-radius: 10px;
+    cursor: pointer;
+  }
+  .search-submit:hover {
+    filter: brightness(1.05);
+  }
+  .search-status {
+    color: var(--color-muted);
+    font-size: 0.9rem;
+    margin: 0 0 0.5rem;
+  }
+  #search-results:not(:empty) {
+    border-top: 1px solid var(--color-border);
+    margin-top: 0.5rem;
+  }
+</style>

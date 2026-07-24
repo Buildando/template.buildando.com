@@ -41,6 +41,11 @@ export const ui: Record<string, Record<string, string>> = {
     "search.title": "Buscar",
     "search.building":
       "O índice de busca é gerado no build de produção. Rode npm run build.",
+    "search.button": "Pesquisar",
+    "search.loading": "Buscando…",
+    "search.results": "{n} resultado(s) para “{q}”",
+    "search.none": "Nenhum resultado para “{q}”.",
+    "search.prompt": "Digite algo e pressione Enter para buscar.",
     "about.title": "Sobre o Autor",
     "footer.rss": "RSS",
     "a11y.theme": "Alternar tema claro/escuro",
@@ -99,6 +104,11 @@ export const ui: Record<string, Record<string, string>> = {
     "search.title": "Search",
     "search.building":
       "The search index is generated in the production build. Run npm run build.",
+    "search.button": "Search",
+    "search.loading": "Searching…",
+    "search.results": "{n} result(s) for “{q}”",
+    "search.none": "No results for “{q}”.",
+    "search.prompt": "Type something and press Enter to search.",
     "about.title": "About",
     "footer.rss": "RSS",
     "a11y.theme": "Toggle light/dark theme",

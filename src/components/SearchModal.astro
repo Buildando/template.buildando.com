@@ -2,7 +2,7 @@
 // In-layout search shell (REQ-036): a modal opened by the header icon, by "/" or
 // by Ctrl/Cmd+K. Provider-agnostic — it hosts the Search port and just triggers
 // its init on open. Without JS, the header trigger is a plain link to /{lang}/search.
-import { useTranslations } from "../i18n";
+import { useTranslations, localizedPath } from "../i18n";
 import Search from "../integrations/Search.astro";
 
 interface Props {
@@ -10,9 +10,10 @@ interface Props {
 }
 const { lang } = Astro.props;
 const t = useTranslations(lang);
+const searchPath = localizedPath(lang, "/search");
 ---
 
-<dialog id="search-dialog" class="search-dialog" aria-label={t("search.open")}>
+<dialog id="search-dialog" class="search-dialog" aria-label={t("search.open")} data-search={searchPath}>
   <div class="search-dialog-inner">
     <Search id="search-modal-mount" lang={lang} />
   </div>
@@ -47,6 +48,16 @@ const t = useTranslations(lang);
         e.preventDefault();
         open();
       }
+    });
+    // Enter in the live-preview input opens the full results page (REQ-036).
+    dialog.addEventListener("keydown", function (e) {
+      if (e.key !== "Enter") return;
+      var tgt = e.target;
+      if (!tgt || tgt.tagName !== "INPUT") return;
+      var q = (tgt.value || "").trim();
+      if (!q) return;
+      e.preventDefault();
+      location.href = dialog.dataset.search + "/?q=" + encodeURIComponent(q);
     });
     dialog.addEventListener("click", function (e) {
       if (e.target === dialog) dialog.close();

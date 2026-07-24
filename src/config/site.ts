@@ -220,6 +220,14 @@ export const THEME = {
 export const POSTS_PER_PAGE = 0;
 
 /**
+ * Page size for the search results page (REQ-036). Search is client-side, so this
+ * paginates the Pagefind results in the browser — independent of POSTS_PER_PAGE,
+ * so the home feed keeps its own behavior. A positive number; results beyond it
+ * spill onto numbered pages with the same prev/next navigation as the feed.
+ */
+export const SEARCH_PER_PAGE = 20;
+
+/**
  * Internationalization (REQ-032). Add or remove locales here — the routes, the
  * language switcher, and hreflang follow. UI strings live in `src/i18n/ui.ts`;
  * a post declares its language with the `lang` frontmatter field.

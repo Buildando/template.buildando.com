@@ -122,6 +122,26 @@ describe.skipIf(!existsSync(dist))("build output", () => {
       expect(html).toContain('id="search-dialog"');
     }
   });
+
+  it("indexes only posts for search (REQ-020)", () => {
+    // data-pagefind-body marks the post article; no other page carries it, so
+    // category, tag, home and about pages are excluded from the search index.
+    expect(read("pt", "posts", "o-que-e-o-buildando", "index.html")).toContain(
+      "data-pagefind-body",
+    );
+    expect(read("pt", "index.html")).not.toContain("data-pagefind-body");
+    expect(read("pt", "categories", "Guia", "index.html")).not.toContain(
+      "data-pagefind-body",
+    );
+    expect(read("pt", "about", "index.html")).not.toContain("data-pagefind-body");
+  });
+
+  it("serves a search results page with a query form (REQ-036)", () => {
+    const html = read("pt", "search", "index.html");
+    expect(html).toContain('name="q"'); // the query input the form submits
+    expect(html).toContain('id="search-results"'); // container the client fills with cards
+    expect(html).toContain("/pagefind/pagefind.js"); // renders via the Pagefind JS API
+  });
 });
 
 // Source-level invariants, independent of dist.
