@@ -102,21 +102,144 @@ change **structure**, not just color: rules scoped by `[data-skin="name"]` in
 `src/styles/skins.css` — `brutalist` is the example. More in the **Skins** section
 of the `README`.
 
-## 6. Common quick tweaks
+## 6. One language or several
 
-- **Default theme**: `THEME.default` (`"dark"` or `"light"`), or lock it with `allowToggle: false`.
-- **Languages**: add or remove them in `I18N` and translate the strings in `src/i18n/ui.ts`.
-  Only one language? Leave a single locale.
-- **Comments / search**: pick the provider in `INTEGRATIONS`
-  (see `src/integrations/README.md`).
-- **Analytics, ads, newsletter, share**: each one is opt-in in a config block;
-  empty means it does not show up.
+The template ships bilingual (Portuguese and English), but that is configuration,
+not structure. The `I18N` block decides:
 
-## 7. Publishing
+```ts
+export const I18N = {
+  defaultLocale: "pt",
+  locales: [
+    { code: "pt", label: "Português", htmlLang: "pt-BR", ogLocale: "pt_BR" },
+    { code: "en", label: "English",   htmlLang: "en",    ogLocale: "en_US" },
+  ],
+} as const;
+```
+
+**To keep a single language**, delete the other line. The language switcher
+disappears from the header on its own, and URLs stay locale-prefixed (`/en/...`).
+Delete that language's hero in `src/content/home/` and the posts written in it too —
+a post whose `lang:` no longer exists fails the build, naming the post.
+
+**To add a language**, add a line to `locales` and translate the strings in
+`src/i18n/ui.ts`. You do not have to guess what is missing: run `npm test` and
+`config-integrity.test.ts` lists exactly the keys the new language still owes.
+
+Each post declares the language it is written in and links its translations — that
+belongs to [writing posts](/en/posts/writing-posts/). What matters here is that
+**nothing forces you to translate everything**: an untranslated post stays reachable
+under the other languages, with the interface translated and the body in its
+original language.
+
+## 7. Logo, favicon and social images
+
+Three files and one field:
+
+```text
+public/favicon.svg      ← header logo AND browser-tab icon
+public/og-default.svg   ← social image for pages with none of their own
+src/assets/author.jpg   ← the photo on the About page
+```
+
+The header logo comes from `SITE.logo`, which points at `/favicon.svg` — replace the
+file keeping the name, or change the field. Being SVG, it stays sharp at any size and
+weighs nothing.
+
+Posts need no image: one without a `cover` automatically gets a social card generated
+at build, carrying your brand and the skin's colors.
+
+## 8. Social links and sharing
+
+Two different blocks. `SOCIAL` is your own profiles, rendered as footer icons:
+
+```ts
+export const SOCIAL = [
+  { label: "GitHub", href: "https://github.com/your-user", icon: "github" },
+  { label: "LinkedIn", href: "https://linkedin.com/in/you", icon: "linkedin" },
+] as const;
+```
+
+`icon` is a [simple-icons](https://simple-icons.org) slug. Ready to use: `github`,
+`instagram`, `threads`, `x`, `tiktok`, `facebook`, `linkedin`, `youtube`, `telegram`,
+`whatsapp` and `rss`. An unknown slug simply draws nothing — to add another, edit
+`src/components/Icon.astro`. An empty list means a footer without icons.
+
+`SHARE` is a different thing: the share buttons **at the foot of each post**.
+
+```ts
+export const SHARE = {
+  networks: ["x", "whatsapp", "telegram", "linkedin", "facebook"],
+  copyLink: true,   // copy-link button
+  native: true,     // the phone's own share sheet, where available
+} as const;
+```
+
+## 9. Turning integrations on
+
+Every integration is opt-in and **empty means off** — the template as you cloned it
+makes no third-party request at all.
+
+**Comments (GitHub Discussions through giscus).** Pick the provider and fill the ids:
+
+```ts
+INTEGRATIONS.comments = "giscus";   // "giscus" | "utterances" | "none"
+```
+
+The ids come from [giscus.app](https://giscus.app), after you make a repository
+public, enable **Discussions** on it and install the giscus app. Paste `repoId` and
+`categoryId` into the `GISCUS` block. While `repoId` is empty, not even the comments
+section renders. A tip: point it at a **separate** comments-only repository, and your
+blog's own source can stay private.
+
+Leave `theme: "site"` so the comments follow the blog's theme button. giscus's own
+default (`preferred_color_scheme`) follows the operating system, which leaves the
+comments dark for a reader who put the site in light mode.
+
+**Search.** `INTEGRATIONS.search = "pagefind"` turns search on; `"none"` turns it off.
+The index is built at build time and runs in the browser — there is no search server.
+
+**Google Analytics.** Paste only the measurement id, not the whole snippet:
+
+```ts
+ANALYTICS.googleAnalytics = "G-XXXXXXXXXX";
+```
+
+That also turns the consent banner on: GA does **not** load before acceptance, and
+declining clears its cookies. With analytics on you take on privacy obligations —
+fill `CONSENT.privacyUrl` and `CONSENT.contact`, which feed the policy page and the
+banner's link.
+
+**Plausible.** `ANALYTICS.plausible = "your-domain.com"`. It sets no cookies, so it
+triggers no banner.
+
+**AdSense.** `ANALYTICS.adsense = "ca-pub-..."` loads the script and starts requiring
+consent. Note: the `src/components/AdUnit.astro` component exists, but **no page uses
+it yet** — the script loads and no ad is shown until you place the component where you
+want the slot.
+
+**Newsletter.** `NEWSLETTER.actionUrl` takes your email provider's form endpoint
+(Buttondown, Mailchimp, and so on). Empty: no form is rendered.
+
+## 10. RSS
+
+Nothing to configure: the feed is generated on its own, **one per language**, at
+`/pt/rss.xml` and `/en/rss.xml`. It is already announced in the `<head>` of every
+page, so feed readers find it by themselves, and there is an icon in the footer.
+Title, description and domain come from `SITE` — changing your identity in step 2
+already fixes the feed.
+
+Drafts never reach the feed.
+
+## 11. Publishing
 
 `npm run build` produces the static `dist/` folder, which runs on **any** host.
 The template already includes an automatic deploy workflow via GitHub Actions
 (see the `README`) — just point it at your host.
+
+Before publishing, `npm test` is worth the minute it takes: besides checking the
+build, it verifies that your configuration hangs together — a language without its
+translations, a skin that does not exist, consent switched off while analytics is on.
 
 There you go — the skeleton is yours. The next step is the one that matters most:
 [writing posts](/en/posts/writing-posts/).
