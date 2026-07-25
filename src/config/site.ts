@@ -117,7 +117,10 @@ export const GISCUS = {
   /** Deterministic post→thread mapping (REQ-024). "pathname" maps by URL path. */
   mapping: "pathname",
   reactionsEnabled: "1",
-  theme: "preferred_color_scheme",
+  /** "site" follows this site's light/dark toggle (recommended). Any other value
+      is used as a giscus theme name verbatim, e.g. "light", "dark", "dark_dimmed",
+      or giscus's own "preferred_color_scheme" (which follows the OS, not the site). */
+  theme: "site",
   lang: "pt",
 } as const;
 

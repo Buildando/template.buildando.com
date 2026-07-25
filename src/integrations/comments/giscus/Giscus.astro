@@ -3,7 +3,8 @@
 // renders the whole section, or nothing when not configured (empty
 // repoId/categoryId → no heading, no script, REQ-017). Loaded lazily on scroll.
 // Selected by INTEGRATIONS.comments === "giscus".
-import { GISCUS } from "../../../config/site";
+import { GISCUS, THEME } from "../../../config/site";
+import { giscusTheme, followsSite } from "../../../lib/giscus-theme";
 import { useTranslations } from "../../../i18n";
 
 interface Props {
@@ -15,10 +16,30 @@ const { term, lang } = Astro.props;
 const t = useTranslations(lang);
 const configured = Boolean(GISCUS.repoId && GISCUS.categoryId);
 
+// Both themes are resolved here, at build time, by the pure module the tests cover;
+// the inline script only chooses between them. When the config pins a theme the two
+// are equal, so the choice never varies.
+const follows = followsSite(GISCUS.theme);
+const themeLight = giscusTheme(GISCUS.theme, "light");
+const themeDark = giscusTheme(GISCUS.theme, "dark");
+
 // Lazy loader as a raw string (set:html avoids HTML-escaping the JS operators).
+//
+// The embed's theme follows the SITE's theme, not the operating system's. giscus's
+// own "preferred_color_scheme" reads the OS preference, which leaves the comments
+// dark for a reader who put the site in light mode — the toggle appears to do
+// nothing to half the page. `GISCUS.theme === "site"` opts into following the
+// toggle; any other value is a giscus theme name and is passed through untouched.
 const loader = `(function(){
   var mount = document.getElementById("giscus-mount");
   if (!mount || mount.dataset.loaded) return;
+  var follows = mount.dataset.follows === "1";
+  function siteTheme(){
+    return document.documentElement.dataset.theme || ${JSON.stringify(THEME.default)};
+  }
+  function themeNow(){
+    return siteTheme() === "light" ? mount.dataset.themelight : mount.dataset.themedark;
+  }
   function load(){
     if (mount.dataset.loaded) return;
     mount.dataset.loaded = "true";
@@ -35,7 +56,7 @@ const loader = `(function(){
     if (d.term) s.setAttribute("data-term", d.term);
     s.setAttribute("data-reactions-enabled", d.reactions);
     s.setAttribute("data-emit-metadata", "0");
-    s.setAttribute("data-theme", d.theme);
+    s.setAttribute("data-theme", themeNow());
     s.setAttribute("data-lang", d.lang);
     mount.appendChild(s);
   }
@@ -45,6 +66,20 @@ const loader = `(function(){
     }
   });
   io.observe(mount);
+
+  // Keep it in sync afterwards: the embed is an iframe, so a later toggle only
+  // reaches it by postMessage. Watching the attribute avoids coupling to whatever
+  // sets it (the toggle, the no-flash script, a future control).
+  if (follows) {
+    new MutationObserver(function(){
+      var frame = document.querySelector("iframe.giscus-frame");
+      if (!frame || !frame.contentWindow) return;
+      frame.contentWindow.postMessage(
+        { giscus: { setConfig: { theme: themeNow() } } },
+        "https://giscus.app"
+      );
+    }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+  }
 })();`;
 ---
 
@@ -61,7 +96,9 @@ const loader = `(function(){
         data-mapping={term ? "specific" : GISCUS.mapping}
         data-term={term ?? ""}
         data-reactions={GISCUS.reactionsEnabled}
-        data-theme={GISCUS.theme}
+        data-theme-light={themeLight}
+        data-theme-dark={themeDark}
+        data-follows={follows ? "1" : "0"}
         data-lang={lang}
       />
       <script is:inline set:html={loader} />
