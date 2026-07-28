@@ -1,7 +1,8 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
-import { SITE, CONSENT, ANALYTICS, INTEGRATIONS, NEWSLETTER } from "../../config/site";
+import { SITE, CONSENT, ANALYTICS, INTEGRATIONS, NEWSLETTER, GISCUS } from "../../config/site";
 import { newsletterAction } from "../../lib/newsletter";
+import { needsPrivacyPage, type PrivacyTopics } from "../../lib/privacy";
 import {
   locales,
   useTranslations,
@@ -9,8 +10,22 @@ import {
   hreflangAlternates,
 } from "../../i18n";
 
+/** What each locale processes; the page exists only where that is something. */
+export function topicsFor(lang: string): PrivacyTopics {
+  return {
+    plausible: Boolean(ANALYTICS.plausible),
+    googleAnalytics: Boolean(ANALYTICS.googleAnalytics),
+    ads: Boolean(ANALYTICS.adsense),
+    comments:
+      INTEGRATIONS.comments === "giscus" && Boolean(GISCUS.repoId && GISCUS.categoryId),
+    newsletter: Boolean(newsletterAction(NEWSLETTER.actionUrl, lang)),
+  };
+}
+
 export function getStaticPaths() {
-  return locales.map((lang) => ({ params: { lang } }));
+  return locales
+    .filter((lang) => needsPrivacyPage(topicsFor(lang)))
+    .map((lang) => ({ params: { lang } }));
 }
 
 const { lang } = Astro.params;
@@ -23,11 +38,8 @@ const t = useTranslations(lang);
  * claim otherwise. Identity values (contact, domain) come from the config surface,
  * never spelled out here (REQ-030).
  */
-const ga = Boolean(ANALYTICS.googleAnalytics);
-const plausible = Boolean(ANALYTICS.plausible);
-const ads = Boolean(ANALYTICS.adsense);
-const giscus = INTEGRATIONS.comments === "giscus";
-const newsletter = Boolean(newsletterAction(NEWSLETTER.actionUrl, lang));
+const topics = topicsFor(lang);
+const { plausible, googleAnalytics: ga, ads, comments: giscus, newsletter } = topics;
 const contact = CONSENT.contact;
 
 const path = CONSENT.privacyUrl || "/privacy";

@@ -1,5 +1,7 @@
 ---
-import { SITE, SOCIAL, CONSENT, ANALYTICS } from "../config/site";
+import { SITE, SOCIAL, CONSENT, ANALYTICS, INTEGRATIONS, NEWSLETTER, GISCUS } from "../config/site";
+import { newsletterAction } from "../lib/newsletter";
+import { needsPrivacyPage } from "../lib/privacy";
 import { useTranslations, localizedPath } from "../i18n";
 import Icon from "./Icon.astro";
 
@@ -14,6 +16,19 @@ const year = new Date().getFullYear();
 // provider is configured and consent is required. The ConsentBanner script wires it.
 const canManageConsent =
   CONSENT.required && Boolean(ANALYTICS.googleAnalytics || ANALYTICS.adsense);
+
+// The policy page is only built where the site processes something, so the link
+// follows it: a blog that collects nothing shows no privacy link and no banner.
+const showPrivacy =
+  CONSENT.privacyUrl.startsWith("/") &&
+  needsPrivacyPage({
+    plausible: Boolean(ANALYTICS.plausible),
+    googleAnalytics: Boolean(ANALYTICS.googleAnalytics),
+    ads: Boolean(ANALYTICS.adsense),
+    comments:
+      INTEGRATIONS.comments === "giscus" && Boolean(GISCUS.repoId && GISCUS.categoryId),
+    newsletter: Boolean(newsletterAction(NEWSLETTER.actionUrl, lang)),
+  });
 ---
 
 <footer class="site-footer">
@@ -21,7 +36,7 @@ const canManageConsent =
     <p>
       © {year} {SITE.author}
       {
-        CONSENT.privacyUrl.startsWith("/") && (
+        showPrivacy && (
           <>
             {" · "}
             <a class="footer-link" href={localizedPath(lang, CONSENT.privacyUrl)}>

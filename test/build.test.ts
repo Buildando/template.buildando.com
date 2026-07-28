@@ -1,8 +1,9 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync, existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
-import { SITE, ANALYTICS, CONSENT, NEWSLETTER } from "../src/config/site";
+import { SITE, ANALYTICS, CONSENT, NEWSLETTER, INTEGRATIONS, GISCUS } from "../src/config/site";
 import { newsletterAction, newsletterHiddenFields } from "../src/lib/newsletter";
+import { needsPrivacyPage } from "../src/lib/privacy";
 import { locales, defaultLocale, localeMeta, useTranslations } from "../src/i18n";
 
 // Absolute SEO URLs derive from the one configured origin (REQ-018), so a fork
@@ -337,6 +338,29 @@ describe.skipIf(!built)("build output", () => {
       );
     }
     expect(read(defaultLocale, "about", "index.html")).not.toContain("data-pagefind-body");
+  });
+
+  it("publishes a privacy policy exactly where there is something to disclose (REQ-038, 039)", () => {
+    // The page, the footer link and the banner all follow the same fact: what this
+    // build actually processes. A blog with no analytics, no ads, no comments embed
+    // and no signup form discloses nothing, so it ships none of the three rather
+    // than a page saying "nothing happens here" linked from every footer.
+    for (const lang of locales) {
+      const needed = needsPrivacyPage({
+        plausible: Boolean(ANALYTICS.plausible),
+        googleAnalytics: Boolean(ANALYTICS.googleAnalytics),
+        ads: Boolean(ANALYTICS.adsense),
+        comments:
+          INTEGRATIONS.comments === "giscus" && Boolean(GISCUS.repoId && GISCUS.categoryId),
+        newsletter: Boolean(newsletterAction(NEWSLETTER.actionUrl, lang)),
+      });
+      expect(has(lang, "privacy", "index.html"), `${lang}: privacy page`).toBe(needed);
+      const linked = read(lang, "index.html").includes(`href="/${lang}/privacy"`);
+      expect(linked, `${lang}: footer privacy link`).toBe(needed);
+      if (!needed) {
+        expect(read("sitemap-0.xml")).not.toContain(`/${lang}/privacy`);
+      }
+    }
   });
 
   it("serves a search results page with a query form (REQ-036)", () => {
