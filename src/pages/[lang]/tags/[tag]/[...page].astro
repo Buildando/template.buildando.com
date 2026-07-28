@@ -4,19 +4,27 @@ import BaseLayout from "../../../../layouts/BaseLayout.astro";
 import PostCard from "../../../../components/PostCard.astro";
 import Pagination from "../../../../components/Pagination.astro";
 import { getTags, type Post } from "../../../../lib/posts";
+import { facetLangSwitch } from "../../../../lib/facet-routes";
 import { POSTS_PER_PAGE } from "../../../../config/site";
 import { absoluteUrl } from "../../../../lib/seo";
 import { locales, useTranslations, localizedPath } from "../../../../i18n";
 
 // One paginated listing per distinct tag, per locale (REQ-019, REQ-037).
 export const getStaticPaths = (async ({ paginate }) => {
+  // Tags are authored per language, so a tag rarely exists in every locale. Collect
+  // them all first to tell the switcher which locales really have this one.
+  const byLocale = new Map<string, Map<string, Post[]>>();
+  for (const lang of locales) byLocale.set(lang, await getTags(lang));
+
   const paths = [];
   for (const lang of locales) {
-    const tags = await getTags(lang);
-    for (const [tag, posts] of tags) {
+    for (const [tag, posts] of byLocale.get(lang)!) {
       const pageSize =
         POSTS_PER_PAGE > 0 ? POSTS_PER_PAGE : Math.max(posts.length, 1);
-      paths.push(...paginate(posts, { params: { lang, tag }, pageSize }));
+      const availableIn = locales.filter((l) => byLocale.get(l)!.has(tag));
+      paths.push(
+        ...paginate(posts, { params: { lang, tag }, pageSize, props: { availableIn } }),
+      );
     }
   }
   return paths;
@@ -24,6 +32,7 @@ export const getStaticPaths = (async ({ paginate }) => {
 
 const { lang, tag } = Astro.params;
 const page = Astro.props.page as Page<Post>;
+const availableIn = Astro.props.availableIn as string[];
 const t = useTranslations(lang);
 const path = page.url.current ?? localizedPath(lang, `/tags/${tag}/`);
 
@@ -40,6 +49,13 @@ const breadcrumbs = [
   path={path}
   lang={lang}
   breadcrumbs={breadcrumbs}
+  langSwitch={facetLangSwitch({
+    kind: "tags",
+    value: tag!,
+    locales,
+    availableIn,
+    fallbackPath: "/tags/",
+  })}
   prev={page.url.prev ? absoluteUrl(page.url.prev) : undefined}
   next={page.url.next ? absoluteUrl(page.url.next) : undefined}
 >
