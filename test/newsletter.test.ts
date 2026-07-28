@@ -33,3 +33,28 @@ describe("newsletterAction (REQ-039)", () => {
     );
   });
 });
+
+import { newsletterHiddenFields } from "../src/lib/newsletter";
+
+describe("newsletterHiddenFields (REQ-039)", () => {
+  it("renders nothing when the provider needs nothing", () => {
+    expect(newsletterHiddenFields(undefined, "xx")).toEqual([]);
+    expect(newsletterHiddenFields({}, "xx")).toEqual([]);
+  });
+
+  it("applies one flat set to every locale", () => {
+    const fields = { html_type: "simple" };
+    expect(newsletterHiddenFields(fields, "xx")).toEqual([["html_type", "simple"]]);
+    expect(newsletterHiddenFields(fields, "yy")).toEqual([["html_type", "simple"]]);
+  });
+
+  it("picks the locale's own set when values differ by language", () => {
+    const fields = { xx: { locale: "xx" }, yy: { locale: "yy" } };
+    expect(newsletterHiddenFields(fields, "xx")).toEqual([["locale", "xx"]]);
+    expect(newsletterHiddenFields(fields, "yy")).toEqual([["locale", "yy"]]);
+  });
+
+  it("yields nothing for a locale absent from a per-locale set", () => {
+    expect(newsletterHiddenFields({ xx: { locale: "xx" } }, "yy")).toEqual([]);
+  });
+});

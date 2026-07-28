@@ -161,6 +161,12 @@ export const UTTERANCES = {
 export const NEWSLETTER = {
   actionUrl: {} as import("../lib/newsletter").NewsletterAction,
   emailField: "email",
+  /** Extra inputs the provider's form requires, rendered hidden. One set for the
+      whole site, or one per locale when a value differs by language:
+        hiddenFields: { locale: "pt", html_type: "simple" }
+        hiddenFields: { pt: { locale: "pt" }, en: { locale: "en" } }
+      Copy them from the HTML snippet the provider generates. */
+  hiddenFields: {} as import("../lib/newsletter").NewsletterFields,
 } as const;
 
 /**

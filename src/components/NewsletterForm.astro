@@ -4,7 +4,7 @@
 // JavaScript; the provider handles storage, double opt-in, sending, and
 // unsubscribe. Renders nothing when NEWSLETTER.actionUrl is empty.
 import { NEWSLETTER } from "../config/site";
-import { newsletterAction } from "../lib/newsletter";
+import { newsletterAction, newsletterHiddenFields } from "../lib/newsletter";
 import { useTranslations } from "../i18n";
 
 interface Props {
@@ -16,6 +16,7 @@ const t = useTranslations(lang);
 // One list per language when configured that way; "" hides the form for this
 // locale without hiding it for the others.
 const action = newsletterAction(NEWSLETTER.actionUrl, lang);
+const hidden = newsletterHiddenFields(NEWSLETTER.hiddenFields, lang);
 ---
 
 {
@@ -44,6 +45,9 @@ const action = newsletterAction(NEWSLETTER.actionUrl, lang);
             autocomplete="email"
             required
           />
+          {hidden.map(([name, value]) => (
+            <input type="hidden" name={name} value={value} />
+          ))}
           <button type="submit">{t("newsletter.button")}</button>
         </form>
       </div>
