@@ -214,9 +214,13 @@ banner's link.
 triggers no banner.
 
 **AdSense.** `ANALYTICS.adsense = "ca-pub-..."` loads the script and starts requiring
-consent. Note: the `src/components/AdUnit.astro` component exists, but **no page uses
-it yet** — the script loads and no ad is shown until you place the component where you
-want the slot.
+consent; the account-association meta tag is emitted from that same value. Two things
+live outside the code: create `public/ads.txt` with the line AdSense gives you, and
+turn the formats on in the dashboard, under *Ads → By site*.
+
+To control where ads land instead of letting Google decide, place
+`src/components/AdUnit.astro` with a slot created in the dashboard. **No page uses it
+by default**: without placing it, only the automatic formats apply.
 
 **Newsletter.** One common confusion first: **RSS does not send email**. The feed is
 a file your site publishes; what polls it is a feed reader. Getting to email takes a

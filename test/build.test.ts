@@ -254,6 +254,16 @@ describe.skipIf(!built)("build output", () => {
     expect(html.includes("googletagmanager.com")).toBe(Boolean(ANALYTICS.googleAnalytics));
     expect(html.includes("adsbygoogle")).toBe(Boolean(ANALYTICS.adsense));
 
+    // AdSense also needs an account-association meta tag. It carries no request and
+    // no cookie, so unlike the ad script it is not gated — but it must exist, or the
+    // dashboard cannot verify the site and no ad ever serves.
+    expect(html.includes('name="google-adsense-account"')).toBe(Boolean(ANALYTICS.adsense));
+    if (ANALYTICS.adsense) {
+      expect(html).toContain(
+        `<meta name="google-adsense-account" content="${ANALYTICS.adsense}">`,
+      );
+    }
+
     const gated = Boolean(ANALYTICS.googleAnalytics || ANALYTICS.adsense);
     expect(html.includes('id="consent-banner"')).toBe(gated && CONSENT.required);
     // Consent must be as easy to withdraw as to give, so the control that reopens

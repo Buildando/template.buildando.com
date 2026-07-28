@@ -211,9 +211,14 @@ página de política e o link do banner.
 dispara banner nenhum.
 
 **AdSense.** `ANALYTICS.adsense = "ca-pub-..."` carrega o script e passa a exigir
-consentimento. Atenção: o componente `src/components/AdUnit.astro` existe, mas
-**nenhuma página o usa ainda** — ou seja, o script carrega e nenhum anúncio é
-exibido até você posicionar o componente onde quiser o bloco.
+consentimento; a meta tag de associação da conta é emitida sozinha a partir desse
+mesmo valor. Faltam duas coisas que só existem fora do código: criar `public/ads.txt`
+com a linha que o AdSense fornece, e ativar os formatos no painel — em *Anúncios →
+Por site*.
+
+Se preferir controlar onde o anúncio entra, em vez de deixar o Google decidir, use o
+componente `src/components/AdUnit.astro` com o slot criado no painel. **Nenhuma
+página o usa por padrão**: sem posicioná-lo, só valem os formatos automáticos.
 
 **Newsletter.** Vale esclarecer uma confusão comum antes: **RSS não manda e-mail**.
 O feed é um arquivo que o seu site publica; quem o consulta é um leitor de feeds.

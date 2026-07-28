@@ -2,7 +2,7 @@
 // SEO head: title, description, canonical, Open Graph, Twitter Card, JSON-LD,
 // and hreflang alternates. Emitted for every page automatically
 // (REQ-011, REQ-012, REQ-013, REQ-018, REQ-032).
-import { SITE } from "../config/site";
+import { SITE, ANALYTICS } from "../config/site";
 import { absoluteUrl } from "../lib/seo";
 import { localeMeta, siteTitle, siteDescription } from "../i18n";
 
@@ -102,6 +102,14 @@ const breadcrumbJsonLd =
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link rel="icon" type="image/svg+xml" href={SITE.logo} />
 <meta name="generator" content={Astro.generator} />
+{
+  /* AdSense account association (REQ-038). A meta tag, not a script: it makes no
+     request and sets no cookie, so it is not gated by consent — the ad script
+     itself still is. The id comes from the config surface (REQ-030). */
+  ANALYTICS.adsense && (
+    <meta name="google-adsense-account" content={ANALYTICS.adsense} />
+  )
+}
 
 <title>{fullTitle}</title>
 <meta name="description" content={description} />
