@@ -21,6 +21,9 @@ export const ui: Record<string, Record<string, string>> = {
     "newsletter.description": "Receba os novos posts por e-mail.",
     "newsletter.placeholder": "seu@email.com",
     "newsletter.button": "Inscrever",
+    "newsletter.sending": "Enviando…",
+    "newsletter.submitted":
+      "Quase lá: confira seu e-mail e confirme a inscrição. Se não chegar em alguns minutos, olhe o spam.",
     "newsletter.consent":
       "Ao inscrever, você concorda em receber e-mails. Cancele quando quiser.",
     "filter.empty": "Nenhum post encontrado com esses filtros.",
@@ -87,6 +90,9 @@ export const ui: Record<string, Record<string, string>> = {
     "newsletter.description": "Get new posts by email.",
     "newsletter.placeholder": "you@email.com",
     "newsletter.button": "Subscribe",
+    "newsletter.sending": "Sending…",
+    "newsletter.submitted":
+      "Almost there: check your email and confirm the subscription. If nothing arrives in a few minutes, look in spam.",
     "newsletter.consent":
       "By subscribing you agree to receive emails. Unsubscribe anytime.",
     "filter.empty": "No posts match these filters.",

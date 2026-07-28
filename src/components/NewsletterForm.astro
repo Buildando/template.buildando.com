@@ -17,6 +17,39 @@ const t = useTranslations(lang);
 // locale without hiding it for the others.
 const action = newsletterAction(NEWSLETTER.actionUrl, lang);
 const hidden = newsletterHiddenFields(NEWSLETTER.hiddenFields, lang);
+
+// Progressive enhancement. Without JS the form posts natively and the provider
+// answers with its own page; with JS it posts in the background and the reader
+// stays here. The provider answers {"success":true} to everything — invalid
+// address, honeypot tripped, real signup alike — so the message promises only what
+// is certainly true: a confirmation email decides it.
+const submitScript = `(function(){
+  var form = document.getElementById("nl-form");
+  if (!form || !window.fetch) return;
+  var status = document.getElementById("nl-status");
+  var button = form.querySelector("button[type=submit]");
+  var labels = { sending: ${JSON.stringify(t("newsletter.sending"))},
+                 done: ${JSON.stringify(t("newsletter.submitted"))},
+                 button: ${JSON.stringify(t("newsletter.button"))} };
+  form.addEventListener("submit", function(event){
+    event.preventDefault();
+    button.disabled = true;
+    status.textContent = labels.sending;
+    fetch(form.action, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams(new FormData(form)).toString(),
+    }).then(function(){
+      form.reset();
+      status.textContent = labels.done;
+      button.disabled = false;
+      button.textContent = labels.button;
+    }).catch(function(){
+      // Network or CORS refusal: hand it back to the browser, which still works.
+      form.submit();
+    });
+  });
+})();`;
 ---
 
 {
@@ -28,6 +61,7 @@ const hidden = newsletterHiddenFields(NEWSLETTER.hiddenFields, lang);
           <p>{t("newsletter.description")}</p>
         </div>
         <form
+          id="nl-form"
           class="nl-form"
           action={action}
           method="post"
@@ -51,7 +85,9 @@ const hidden = newsletterHiddenFields(NEWSLETTER.hiddenFields, lang);
           <button type="submit">{t("newsletter.button")}</button>
         </form>
       </div>
+      <p id="nl-status" class="nl-status" role="status" aria-live="polite" />
       <p class="nl-consent">{t("newsletter.consent")}</p>
+      <script is:inline set:html={submitScript} />
     </section>
   )
 }
@@ -109,6 +145,14 @@ const hidden = newsletterHiddenFields(NEWSLETTER.hiddenFields, lang);
   }
   .nl-form button:hover {
     filter: brightness(1.05);
+  }
+  .nl-status {
+    margin: 0.75rem 0 0;
+    font-size: 0.9rem;
+    color: var(--color-accent);
+  }
+  .nl-status:empty {
+    display: none;
   }
   .nl-consent {
     margin: 0.75rem 0 0;
