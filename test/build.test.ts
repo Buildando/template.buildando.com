@@ -1,7 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync, existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
-import { SITE, ANALYTICS, CONSENT } from "../src/config/site";
+import { SITE, ANALYTICS, CONSENT, NEWSLETTER } from "../src/config/site";
+import { newsletterAction, newsletterHiddenFields } from "../src/lib/newsletter";
 import { locales, defaultLocale, localeMeta, useTranslations } from "../src/i18n";
 
 // Absolute SEO URLs derive from the one configured origin (REQ-018), so a fork
@@ -251,8 +252,24 @@ describe.skipIf(!built)("build output", () => {
     }
   });
 
-  it("renders no newsletter form by default (REQ-039)", () => {
-    expect(read(defaultLocale, "index.html")).not.toContain('class="newsletter"');
+  it("renders the signup form exactly where a list is configured (REQ-039)", () => {
+    // Opt-in per locale: the form appears only where an endpoint exists, and when
+    // it does it carries what the provider requires — a form that posts without
+    // the provider's own fields is accepted and silently subscribes nobody.
+    for (const lang of locales) {
+      const html = read(lang, "index.html");
+      const action = newsletterAction(NEWSLETTER.actionUrl, lang);
+      expect(html.includes('class="newsletter"')).toBe(Boolean(action));
+      if (!action) continue;
+      expect(html).toContain(`action="${action}"`);
+      expect(html).toContain(`name="${NEWSLETTER.emailField}"`);
+      for (const [name, value] of newsletterHiddenFields(NEWSLETTER.hiddenFields, lang)) {
+        expect(html).toContain(`name="${name}"`);
+        // An empty value renders as a bare attribute, which submits as "" — which
+        // is exactly what a honeypot field must do.
+        if (value) expect(html).toContain(`name="${name}" value="${value}"`);
+      }
+    }
   });
 
   it.skipIf(!somePost)("shows share buttons on a post (REQ-040)", () => {
