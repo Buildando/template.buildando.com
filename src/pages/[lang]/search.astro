@@ -5,8 +5,10 @@
 // (data-pagefind-body lives on the post article), so results are posts only.
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { SEARCH_PER_PAGE } from "../../config/site";
+import { pagefindLanguage } from "../../lib/search-index";
 import {
   locales,
+  localeMeta,
   useTranslations,
   localizedPath,
   hreflangAlternates,
@@ -20,6 +22,8 @@ const { lang } = Astro.params;
 const t = useTranslations(lang);
 
 const searchPath = localizedPath(lang, "/search");
+// The index key is the page's html lang lowercased, not the locale code.
+const searchLanguage = pagefindLanguage(localeMeta(lang).htmlLang);
 const strings = {
   loading: t("search.loading"),
   results: t("search.results"),
@@ -59,7 +63,7 @@ const strings = {
 
   <script
     is:inline
-    define:vars={{ lang, perPage: SEARCH_PER_PAGE, strings, searchPath }}
+    define:vars={{ lang, searchLanguage, perPage: SEARCH_PER_PAGE, strings, searchPath }}
   >
     (function () {
       var input = document.getElementById("search-q");
@@ -97,7 +101,7 @@ const strings = {
       async function loadPagefind() {
         if (pf) return pf;
         pf = await import("/pagefind/pagefind.js");
-        if (pf.options) await pf.options({ language: lang });
+        if (pf.options) await pf.options({ language: searchLanguage });
         return pf;
       }
 

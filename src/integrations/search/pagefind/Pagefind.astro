@@ -5,7 +5,8 @@
 // on demand via a registered init (the modal calls it). The build-time index is
 // produced by `pagefind --site dist` in the package.json build script.
 // Selected by INTEGRATIONS.search === "pagefind".
-import { useTranslations } from "../../../i18n";
+import { useTranslations, localeMeta } from "../../../i18n";
+import { pagefindLanguage } from "../../../lib/search-index";
 
 interface Props {
   /** Unique id of the mount element (the modal and the page pass different ids). */
@@ -13,6 +14,9 @@ interface Props {
   lang: string;
 }
 const { id, lang } = Astro.props;
+// Without this the widget searches whatever index it defaults to, so the modal and
+// the results page could disagree about which language they are searching.
+const searchLanguage = pagefindLanguage(localeMeta(lang).htmlLang);
 const t = useTranslations(lang);
 
 const idJson = JSON.stringify(id);
@@ -27,6 +31,7 @@ const script = `(function(){
     document.head.appendChild(css);
     import("/pagefind/pagefind-ui.js").then(function(){
       new PagefindUI({ element: "#" + ${idJson}, showSubResults: true, showImages: false,
+        language: ${JSON.stringify(searchLanguage)},
         translations: { placeholder: el.dataset.lang === "en" ? "Search" : "Buscar" } });
       var input = el.querySelector("input"); if (input) setTimeout(function(){ input.focus(); }, 0);
     }).catch(function(){

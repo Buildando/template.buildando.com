@@ -230,6 +230,21 @@ describe.skipIf(!built)("build output", () => {
     expect(has("pagefind", "pagefind.js")).toBe(true);
   });
 
+  it("searches the index that its own locale actually built (REQ-020, 032)", () => {
+    // The failure this guards: the page asks Pagefind for a language key that no
+    // index carries, and the search quietly answers from the default one — which is
+    // how Portuguese queries returned English posts. English hid it, because the
+    // locale code and the index key coincide there.
+    const entry = JSON.parse(read("pagefind", "pagefind-entry.json"));
+    const built = Object.keys(entry.languages ?? {});
+    expect(built.length).toBeGreaterThan(0);
+    for (const lang of locales) {
+      const asked = attr(read(lang, "search", "index.html"), /searchLanguage\s*=\s*"([^"]+)"/);
+      expect(asked, `no search language emitted for ${lang}`).toBeTruthy();
+      expect(built, `${lang} asks for "${asked}", which no index provides`).toContain(asked);
+    }
+  });
+
   it("ships exactly the analytics that are configured (REQ-038, REQ-042)", () => {
     const html = read(defaultLocale, "index.html");
     // Each provider is opt-in: present when its id is set, absent when it is not.
