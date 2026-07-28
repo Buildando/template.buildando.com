@@ -249,8 +249,15 @@ Rascunhos nunca entram no feed.
 ## 11. Publicando
 
 `npm run build` gera a pasta `dist/` estática, que serve em **qualquer**
-hospedagem. O template já inclui um workflow de deploy automático via GitHub
-Actions (veja o `README`) — é só apontá-lo para o seu host.
+hospedagem: armazenamento de objetos, CDN, host estático ou hospedagem
+compartilhada tradicional.
+
+O template **não traz** um workflow de deploy, de propósito: automação pertence a um
+site concreto, com host e credenciais próprios, e um workflow que não consegue rodar
+vira CI vermelho em todo fork antes de a pessoa ter decidido qualquer coisa. Quando
+você tiver hospedagem, a seção **Deploying** do `README` descreve os dois caminhos
+que cobrem hospedagem compartilhada — rsync por SSH e FTPS — com as armadilhas de
+cada um.
 
 Antes de publicar, `npm test` vale o minuto que leva: além de checar o build, ele
 verifica se a sua configuração é coerente — idioma sem tradução, skin que não

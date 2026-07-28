@@ -2,7 +2,7 @@
 
 A fast, **forkable** static blog built with [Astro](https://astro.build). Content
 in markdown, **no backend**, strong SEO by construction, client-side search, and
-comments via **GitHub Discussions**. Deploys to any static host via GitHub Actions.
+comments via **GitHub Discussions**. Builds to plain static files you can host anywhere.
 
 This repository is the _template_ itself — the live demo at
 [template.buildando.com](https://template.buildando.com). Fork it, edit **one**
@@ -53,7 +53,7 @@ and giscus. Each step is detailed below.
 - **Light/dark theme** with a header toggle, remembered, no flash on load.
 - **Internationalization (i18n)**: per-locale routes (`/pt/`, `/en/`), translated
   interface, a language switcher, `hreflang`, and a per-locale feed.
-- **Automatic deploy** to any static host via GitHub Actions (rsync/SSH or FTP).
+- **Host-agnostic output** — plain static files; the deploy transports (FTPS, rsync/SSH) are documented below rather than shipped.
 
 ## Running locally
 
@@ -249,30 +249,33 @@ OG images, deploy).
 
 ## Deploying
 
-The build output in `dist/` is plain static files — host them anywhere. A GitHub
-Actions workflow (`.github/workflows/deploy.yml`) builds and publishes on every
-push to `main`. It targets **cPanel-style shared hosting** over rsync/SSH by
-default, but the transport is easy to swap for any host.
+The build output in `dist/` is plain static files — host them anywhere: object
+storage, a CDN, a static host, or classic shared hosting. **No deploy workflow
+ships with this template**, deliberately: automation belongs to a concrete site,
+with its own host and its own credentials, and a workflow that cannot run is a red
+CI badge on every fork before it has decided anything. Add one when you have a host.
 
-### Primary path: rsync over SSH
+Two transports cover cPanel-style shared hosting, and both are documented in the
+[`cpanel-static-deploy`](.skills/cpanel-static-deploy/SKILL.md) skill, with the
+traps that cost real time.
 
-1. **Enable SSH** on your host (on cPanel shared plans it's often off by default
-   and on port `2222`, not `22` — check with your provider).
-2. Generate a key pair and put the public half in `~/.ssh/authorized_keys` on the
-   server.
-3. Configure the repository _secrets_ (Settings → Secrets → Actions):
-   `DEPLOY_SSH_HOST`, `DEPLOY_SSH_USER`, `DEPLOY_SSH_KEY`, `DEPLOY_SSH_PORT`
-   (e.g. `2222`), `DEPLOY_TARGET_DIR` (e.g. `/home/USER/public_html`).
-4. `git push` to the `main` branch triggers build + deploy.
+### rsync over SSH
 
-### Fallback: FTP
+Needs a shell on the host — on cPanel shared plans it is often off by default and
+on port `2222`. Generate a key pair, put the public half in
+`~/.ssh/authorized_keys`, and keep host, user, key, port and target directory in
+your CI provider's secrets. Upload `dist/` to `public_html`.
 
-If the host won't enable SSH, swap the deploy step for an FTP action (e.g.
-`SamKirkland/FTP-Deploy-Action`) using secrets `FTP_SERVER`, `FTP_USERNAME`,
-`FTP_PASSWORD` and `server-dir: public_html/`. The build is the same; only the
-transport changes.
+### FTPS
 
-No credential goes into the repository — they all live in Actions secrets.
+The path when the plan has no shell, which is common. An action such as
+`SamKirkland/FTP-Deploy-Action` syncs `dist/` to `public_html/` incrementally,
+using server, username and password from secrets. Watch the FTP-account directory
+trap described in the skill: a dedicated account's directory defaults to a subfolder
+of the home, not the web root, and the upload lands where nothing serves it.
+
+Whichever you pick: transfer only the build output, keep every credential in your CI
+provider's secrets, and never in the repository.
 
 ## Structure
 
@@ -287,7 +290,6 @@ src/
   pages/                 # routes: home, post, tag, category, search, rss, robots
   styles/global.css      # typography and theme tokens
 public/                  # logo, og default, .htaccess (passed straight to dist/)
-.github/workflows/       # deploy
 .specs/                  # SDD specification
 .skills/                 # techniques used (Astro, SEO, giscus, Pagefind, deploy)
 ```

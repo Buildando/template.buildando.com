@@ -10,7 +10,7 @@
  *   1. Edit the values in this file.
  *   2. Replace public/favicon.svg and the logo asset.
  *   3. Fill GISCUS from https://giscus.app after enabling Discussions.
- *   4. Set the GitHub Actions deploy secrets (see .github/workflows/deploy.yml).
+ *   4. Pick a host and add your own deploy step (see "Deploying" in README.md).
  */
 
 import { SKINS, type SkinName } from "./skins";

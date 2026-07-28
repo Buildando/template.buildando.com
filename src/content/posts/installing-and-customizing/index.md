@@ -252,9 +252,14 @@ Drafts never reach the feed.
 
 ## 11. Publishing
 
-`npm run build` produces the static `dist/` folder, which runs on **any** host.
-The template already includes an automatic deploy workflow via GitHub Actions
-(see the `README`) — just point it at your host.
+`npm run build` produces the static `dist/` folder, which runs on **any** host:
+object storage, a CDN, a static host, or classic shared hosting.
+
+The template ships **no** deploy workflow, deliberately: automation belongs to a
+concrete site, with its own host and credentials, and a workflow that cannot run is
+a red CI badge on every fork before it has decided anything. Once you have hosting,
+the **Deploying** section of the `README` covers the two transports that fit shared
+hosting — rsync over SSH and FTPS — with the traps of each.
 
 Before publishing, `npm test` is worth the minute it takes: besides checking the
 build, it verifies that your configuration hangs together — a language without its

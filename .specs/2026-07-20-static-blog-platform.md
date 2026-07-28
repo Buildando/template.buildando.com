@@ -117,7 +117,13 @@ SEO is not an afterthought bolted on at the end; it is a set of build outputs �
 
 ### Deployment
 
-- `REQ-025`: A GitHub Actions workflow shall build the site and deploy the build output to the configured host's `public_html` on push to the default branch.
+These four describe a **deployed site**, not the template. The template ships no
+workflow (decision of 2026-07-28): automation belongs to a concrete site with its own
+host and credentials, and a workflow that cannot run turns every fork's CI red before
+it has chosen a host. The reference deployment is the `buildando.com` fork, which
+carries the workflow these requirements describe.
+
+- `REQ-025`: A deployed site's CI shall build it and transfer the build output to the host's `public_html` on push to the default branch.
 - `REQ-026`: Deployment shall transfer only the build output, shall authenticate using credentials held in GitHub Actions secrets, and shall place no secret — SSH key, password, host — in the repository.
 - `REQ-027`: The workflow shall support two transports to `public_html` — **FTPS** (no shell required) and **rsync over SSH** (where the plan provides an SSH shell) — selectable per host without changing the build. On shared plans whose SSH shell is disabled, FTPS is the operative path.
 - `REQ-028`: The site shall build and be previewable locally with a single documented command each, producing output identical in shape to what the workflow deploys.
@@ -284,7 +290,6 @@ buildando.com
 │   ├── pages/                 # routes: index, post, tag, category, search, feed, robots
 │   └── styles/                # global CSS + theme tokens consumed from config
 ├── public/                    # static passthrough (logo, favicons, .htaccess)
-└── .github/workflows/         # deploy workflow (REQ-025)
 ```
 
 The boundaries are deliberate. Content changes when the author writes; it never forces a code change (`REQ-002`). The configuration surface changes when identity changes; it is the fork seam (`REQ-009`). Layouts and components change when the design changes; they read identity from config and never hardcode it (`REQ-030`). This is the same discipline as the hexagonal separation in the sibling projects, applied to a content site: content, identity, and presentation do not leak into each other.
@@ -328,6 +333,14 @@ There is no running service to observe. The signals are:
 - **Production**: optional privacy-friendly analytics, disabled by default and enabled only by setting an id in the configuration surface, provides traffic signal without a backend. Google Search Console is the external SEO signal and is an operational setup step, not a build output.
 
 ## Risks and Open Questions
+
+- **Resolved — the template ships no deploy workflow (2026-07-28).** It shipped one
+  for a while, and the template's own CI failed on every push because its secrets
+  were never set: `remote_path can not be empty`, run after run. A red badge on a
+  template is a claim about the project's health, and this one was noise. Deployment
+  moved to where it belongs — the deployed fork — and the transports stayed as
+  documentation. The cost is that a forker writes their own deploy step; the README
+  and the install post now say so instead of promising a workflow.
 
 - **Resolved — the deploy shipped over FTPS.** On the shared plan the SSH shell was disabled and not enabled in time: key auth succeeded but rsync could not run. The deploy switched to FTPS (`REQ-027`), which needs no shell, and the site went live. rsync-over-SSH stays available for any plan that has a shell. Enabling SSH is an operational task, not a code one, and no longer blocks deploy.
 - **cPanel shared hosts have no official CLI.** "Install a CLI for HostGator" has no real target; there is no first-party tool. What exists is FTPS and SSH/rsync, both standard. The automation lives in the GitHub Actions workflow, not in a vendor CLI — the workflow is the answer.
@@ -488,9 +501,9 @@ these are marked "Test pending" and are a deliberate, small residue, not a gap.
 - `REQ-043`: Done. `INTEGRATIONS` in `src/config/site.ts` names the providers. Three ports under `src/integrations/`: `Comments.astro` (pick-one: `comments/giscus/`, `comments/utterances/`), `Search.astro` (pick-one: `search/pagefind/`, used by both the modal and the `/search` page), and `Analytics.astro` (multi-enable: `analytics/plausible/`, `analytics/google-analytics/`, `analytics/adsense/`, plus a provider-agnostic `analytics/ConsentBanner.astro`). Consumers import ports, never providers. Contributor guide in `src/integrations/README.md`. Verified: default renders nothing; swapping comments to `"utterances"` swaps the widget with no other change; the analytics port stays consent-clean by default and gates GA/AdSense behind the consent queue; only selected/enabled adapters ship.
 - `REQ-023`: Done. `GISCUS` in `src/config/site.ts`.
 - `REQ-024`: Done. `data-mapping="pathname"` with a `data-term` override driven by the post's `discussion` frontmatter.
-- `REQ-025`: Done and **live**. `.github/workflows/deploy.yml` builds, tests, and deploys on push. Proven end to end on the fork (`buildando.com`): build + tests + FTPS transfer to `public_html`, verified serving HTTP 200.
+- `REQ-025`: Done and **live in the fork**. `.github/workflows/deploy.yml` there builds, tests, and deploys on push — proven end to end on `buildando.com`: build + tests + FTPS transfer to `public_html`, verified serving HTTP 200. The template carries no workflow, so a fresh fork has nothing failing to configure away.
 - `REQ-026`: Done and verified live. Workflow reads only Actions/Environment secrets (FTPS credentials in a `HostGator` environment); `.gitignore` excludes keys/`.env`; no credential in the repo.
-- `REQ-027`: Done. The shipped transport is **FTPS** (`SamKirkland/FTP-Deploy-Action`, incremental sync) because the shared plan's SSH shell is disabled; rsync-over-SSH stays documented for plans with a shell — both in the `cpanel-static-deploy` skill and `README.md`.
+- `REQ-027`: Done. Neither transport is *shipped* — the template has no workflow — so both are **documented**: the `cpanel-static-deploy` skill and the README's Deploying section describe rsync-over-SSH and FTPS with the traps of each. The reference fork runs FTPS (`SamKirkland/FTP-Deploy-Action`, incremental sync) because its shared plan has no SSH shell. This wording replaces an earlier note claiming FTPS was the shipped transport, which was true of the fork and false of the template.
 - `REQ-028`: Done. `npm run build` and `npm run dev`/`preview` in `package.json`; build verified, dev server verified serving HTTP 200.
 - `REQ-029`: Done. `README.md` fork procedure; example post exercises frontmatter, colocated cover, tags, category, and the discussion embed.
 - `REQ-030`: Done. Identity confined to `src/config/site.ts` by construction, enforced by the source scan in `test/build.test.ts` ("the domain appears in src code only inside config/site.ts"), which walks `src/` for `new URL(SITE.url).host` and exempts only the config surface and the authored content.
