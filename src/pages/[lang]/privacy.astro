@@ -1,6 +1,7 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
-import { SITE, CONSENT, ANALYTICS, INTEGRATIONS } from "../../config/site";
+import { SITE, CONSENT, ANALYTICS, INTEGRATIONS, NEWSLETTER } from "../../config/site";
+import { newsletterAction } from "../../lib/newsletter";
 import {
   locales,
   useTranslations,
@@ -26,6 +27,7 @@ const ga = Boolean(ANALYTICS.googleAnalytics);
 const plausible = Boolean(ANALYTICS.plausible);
 const ads = Boolean(ANALYTICS.adsense);
 const giscus = INTEGRATIONS.comments === "giscus";
+const newsletter = Boolean(newsletterAction(NEWSLETTER.actionUrl, lang));
 const contact = CONSENT.contact;
 
 const path = CONSENT.privacyUrl || "/privacy";
@@ -139,12 +141,30 @@ if (giscus) {
   });
 }
 
+// 4b. Newsletter — only when a signup endpoint is configured for this locale
+if (newsletter) {
+  sections.pt.push({
+    h: "Newsletter",
+    p: [
+      "Se você assinar a newsletter, o seu e-mail é enviado diretamente ao provedor de envio e armazenado lá — este site não recebe nem guarda cópia dele, porque o formulário publica direto no provedor.",
+      "A base legal é o seu consentimento, dado ao enviar o formulário. Todo e-mail traz um link de cancelamento, e cancelar remove você da lista do provedor. Você também pode pedir a exclusão pelo contato acima.",
+    ],
+  });
+  sections.en.push({
+    h: "Newsletter",
+    p: [
+      "If you subscribe to the newsletter, your address goes straight to the sending provider and is stored there — this site neither receives nor keeps a copy, because the form posts directly to the provider.",
+      "The legal basis is your consent, given by submitting the form. Every email carries an unsubscribe link, and unsubscribing removes you from the provider's list. You can also ask for deletion through the contact above.",
+    ],
+  });
+}
+
 // 5. What does not happen
 sections.pt.push({
   h: "O que não acontece aqui",
   p: [
     ads ? "" : "Não há anúncios.",
-    "Não há newsletter nem qualquer coleta de e-mail.",
+    newsletter ? "" : "Não há newsletter nem qualquer coleta de e-mail.",
     "As fontes são servidas pelo próprio domínio, então nenhuma requisição a serviços de fontes de terceiros é feita.",
     "A busca roda inteiramente no seu navegador, sobre um índice estático: o que você digita não é enviado a servidor nenhum.",
     "Os ícones de redes sociais e os botões de compartilhar são apenas links. Nada é requisitado a esses serviços a menos que você clique.",
@@ -154,7 +174,7 @@ sections.en.push({
   h: "What does not happen here",
   p: [
     ads ? "" : "There are no ads.",
-    "There is no newsletter and no email collection of any kind.",
+    newsletter ? "" : "There is no newsletter and no email collection of any kind.",
     "Fonts are served from this domain, so no request is made to third-party font services.",
     "Search runs entirely in your browser against a static index: what you type is never sent to a server.",
     "Social icons and share buttons are plain links. Nothing is requested from those services unless you click.",
