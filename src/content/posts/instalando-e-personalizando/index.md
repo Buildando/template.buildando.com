@@ -215,8 +215,27 @@ consentimento. Atenção: o componente `src/components/AdUnit.astro` existe, mas
 **nenhuma página o usa ainda** — ou seja, o script carrega e nenhum anúncio é
 exibido até você posicionar o componente onde quiser o bloco.
 
-**Newsletter.** `NEWSLETTER.actionUrl` recebe o endpoint do seu provedor de e-mail
-(Buttondown, Mailchimp, etc.). Vazio: nenhum formulário é renderizado.
+**Newsletter.** Vale esclarecer uma confusão comum antes: **RSS não manda e-mail**.
+O feed é um arquivo que o seu site publica; quem o consulta é um leitor de feeds.
+Para chegar em e-mail é preciso um provedor no meio.
+
+`NEWSLETTER.actionUrl` recebe o endpoint do formulário desse provedor. Ele aceita um
+endpoint único ou **um por idioma**:
+
+```ts
+actionUrl: "https://buttondown.com/api/emails/embed-subscribe/USUARIO"
+actionUrl: { pt: "…/USUARIO-pt", en: "…/USUARIO-en" }
+```
+
+Num blog multilíngue prefira um por idioma: o feed é por idioma, então a lista
+alimentada por ele também é, e quem assina lendo em inglês não deveria receber posts
+em português. Idioma sem endpoint simplesmente não mostra o formulário — melhor
+nenhum formulário do que inscrever a pessoa na lista errada.
+
+O ciclo se fecha no painel do provedor: ative o **RSS-to-email** de cada lista
+apontando para o feed correspondente (`/pt/rss.xml`, `/en/rss.xml`). A partir daí
+publicar um post envia o e-mail sozinho. O formulário é HTML puro que posta direto no
+provedor — nenhum dado de assinante passa pelo seu site, que continua estático.
 
 ## 10. RSS
 

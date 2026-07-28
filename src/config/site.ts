@@ -138,17 +138,28 @@ export const UTTERANCES = {
 
 /**
  * Optional newsletter signup (REQ-039). Delegated to an email provider — no
- * backend. Empty `actionUrl` disables the form (nothing is rendered).
+ * backend, no subscriber data on this site. Empty disables the form entirely
+ * (nothing is rendered).
  *
- * Buttondown: set `actionUrl` to
- *   https://buttondown.com/api/emails/embed-subscribe/<your-username>
- * and, in the Buttondown dashboard, enable RSS-to-email pointing at your public
- * feed (e.g. https://your-domain/pt/rss.xml) so new posts are emailed automatically.
- * Other providers work too — paste their form endpoint and set `emailField` to the
- * field name they expect (Buttondown: "email", Mailchimp: "EMAIL").
+ * `actionUrl` takes either one endpoint for the whole site, or one per locale:
+ *
+ *   actionUrl: "https://buttondown.com/api/emails/embed-subscribe/USER"
+ *   actionUrl: { pt: "…/USER-pt", en: "…/USER-en" }
+ *
+ * Prefer per locale on a multilingual blog: the feed is per language, so a list fed
+ * from it is too, and a reader who signs up in English should not receive posts in
+ * Portuguese. A locale with no endpoint simply shows no form.
+ *
+ * Buttondown: create one newsletter per language, set each `actionUrl` to
+ *   https://buttondown.com/api/emails/embed-subscribe/<that-newsletter-username>
+ * and, in each dashboard, enable RSS-to-email pointing at the matching feed
+ * (https://your-domain/pt/rss.xml, https://your-domain/en/rss.xml) so publishing a
+ * post emails the right list on its own. Other providers work the same way — paste
+ * their form endpoint and set `emailField` to the field name they expect
+ * (Buttondown: "email", Mailchimp: "EMAIL").
  */
 export const NEWSLETTER = {
-  actionUrl: "",
+  actionUrl: {} as import("../lib/newsletter").NewsletterAction,
   emailField: "email",
 } as const;
 

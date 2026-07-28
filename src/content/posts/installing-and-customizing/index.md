@@ -218,8 +218,27 @@ consent. Note: the `src/components/AdUnit.astro` component exists, but **no page
 it yet** — the script loads and no ad is shown until you place the component where you
 want the slot.
 
-**Newsletter.** `NEWSLETTER.actionUrl` takes your email provider's form endpoint
-(Buttondown, Mailchimp, and so on). Empty: no form is rendered.
+**Newsletter.** One common confusion first: **RSS does not send email**. The feed is
+a file your site publishes; what polls it is a feed reader. Getting to email takes a
+provider in between.
+
+`NEWSLETTER.actionUrl` takes that provider's form endpoint. It accepts a single
+endpoint or **one per language**:
+
+```ts
+actionUrl: "https://buttondown.com/api/emails/embed-subscribe/USER"
+actionUrl: { pt: "…/USER-pt", en: "…/USER-en" }
+```
+
+On a multilingual blog prefer one per language: the feed is per language, so a list
+fed from it is too, and someone who subscribes reading in English should not receive
+posts in Portuguese. A language with no endpoint simply shows no form — better no
+form than signing a reader up to the wrong list.
+
+The loop closes in the provider's dashboard: turn on **RSS-to-email** for each list,
+pointing at the matching feed (`/pt/rss.xml`, `/en/rss.xml`). From then on, publishing
+a post sends the email on its own. The form is plain HTML posting straight to the
+provider — no subscriber data touches your site, which stays static.
 
 ## 10. RSS
 

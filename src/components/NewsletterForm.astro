@@ -4,6 +4,7 @@
 // JavaScript; the provider handles storage, double opt-in, sending, and
 // unsubscribe. Renders nothing when NEWSLETTER.actionUrl is empty.
 import { NEWSLETTER } from "../config/site";
+import { newsletterAction } from "../lib/newsletter";
 import { useTranslations } from "../i18n";
 
 interface Props {
@@ -11,10 +12,14 @@ interface Props {
 }
 const { lang } = Astro.props;
 const t = useTranslations(lang);
+
+// One list per language when configured that way; "" hides the form for this
+// locale without hiding it for the others.
+const action = newsletterAction(NEWSLETTER.actionUrl, lang);
 ---
 
 {
-  NEWSLETTER.actionUrl && (
+  action && (
     <section class="newsletter" aria-label={t("newsletter.title")}>
       <div class="nl-inner">
         <div class="nl-copy">
@@ -23,7 +28,7 @@ const t = useTranslations(lang);
         </div>
         <form
           class="nl-form"
-          action={NEWSLETTER.actionUrl}
+          action={action}
           method="post"
           target="_blank"
           rel="noopener"
