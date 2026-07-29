@@ -177,72 +177,189 @@ export const SHARE = {
 
 ## 9. Turning integrations on
 
-Every integration is opt-in and **empty means off** — the template as you cloned it
-makes no third-party request at all.
+Every integration is opt-in and **empty means off**: the template as you cloned it
+makes not one third-party request. Turn on only what you use — and each one you turn
+on changes what the privacy policy declares, on its own.
 
-**Comments (GitHub Discussions through giscus).** Pick the provider and fill the ids:
+### 9.1 Comments with GitHub Discussions (giscus)
+
+giscus renders a GitHub discussion inside the post. There is no database: the
+comments live on GitHub.
+
+1. **Create a public repository just for comments** — say
+   `your-user/my-blog-comments`. It has to be public, but the **blog's own repository
+   can stay private**: they are separate things, which is the reason to dedicate one.
+2. In that repository, go to *Settings → General → Features* and tick **Discussions**.
+3. Install the giscus app on it: [github.com/apps/giscus](https://github.com/apps/giscus).
+4. Open [giscus.app](https://giscus.app) and enter `owner/repository`. The page checks
+   the three prerequisites above and, if they hold, hands you **`repoId`** and
+   **`categoryId`** — pick the *Announcements* category, which is announcement-only
+   and stops anyone opening loose threads.
+5. Paste into the `GISCUS` block:
 
 ```ts
-INTEGRATIONS.comments = "giscus";   // "giscus" | "utterances" | "none"
+export const GISCUS = {
+  repo: "your-user/my-blog-comments",
+  repoId: "R_kg...",
+  category: "Announcements",
+  categoryId: "DIC_kw...",
+  mapping: "pathname",   // each post URL maps to a discussion
+  theme: "site",
+} as const;
 ```
 
-The ids come from [giscus.app](https://giscus.app), after you make a repository
-public, enable **Discussions** on it and install the giscus app. Paste `repoId` and
-`categoryId` into the `GISCUS` block. While `repoId` is empty, not even the comments
-section renders. A tip: point it at a **separate** comments-only repository, and your
-blog's own source can stay private.
+`mapping: "pathname"` ties a post to its discussion by URL path. Which means
+**renaming a post's folder orphans its comments** — the old discussion stays there,
+pointing at an address that no longer exists.
 
 Leave `theme: "site"` so the comments follow the blog's theme button. giscus's own
-default (`preferred_color_scheme`) follows the operating system, which leaves the
-comments dark for a reader who put the site in light mode.
+default, `preferred_color_scheme`, follows the **operating system**: a reader who puts
+the site in light mode while their OS is dark gets dark comments in the middle of a
+light page.
 
-**Search.** `INTEGRATIONS.search = "pagefind"` turns search on; `"none"` turns it off.
-The index is built at build time and runs in the browser — there is no search server.
+While `repoId` is empty the whole section is not rendered — no heading, no script, no
+request.
 
-**Google Analytics.** Paste only the measurement id, not the whole snippet:
+### 9.2 Google Analytics
+
+Of the snippet Google hands you, the blog needs **one thing**: the measurement id.
+
+1. In Google Analytics, create a GA4 property and a data stream for your domain. It
+   gives you an id shaped `G-XXXXXXXXXX`.
+2. Paste it into the config:
 
 ```ts
 ANALYTICS.googleAnalytics = "G-XXXXXXXXXX";
 ```
 
-That also turns the consent banner on: GA does **not** load before acceptance, and
-declining clears its cookies. With analytics on you take on privacy obligations —
-fill `CONSENT.privacyUrl` and `CONSENT.contact`, which feed the policy page and the
-banner's link.
+Do not paste the `<script>`: the blog emits the very same `gtag` calls, only **after
+consent**. Turning GA on lights up three things at once:
 
-**Plausible.** `ANALYTICS.plausible = "your-domain.com"`. It sets no cookies, so it
-triggers no banner.
+- the **cookie banner** starts appearing;
+- the **privacy policy** gains its Google Analytics section;
+- the footer gains **Cookie preferences**, for readers who change their mind.
 
-**AdSense.** `ANALYTICS.adsense = "ca-pub-..."` loads the script and starts requiring
-consent; the account-association meta tag is emitted from that same value. Two things
-live outside the code: create `public/ads.txt` with the line AdSense gives you, and
-turn the formats on in the dashboard, under *Ads → By site*.
+So fill the `CONSENT` block along with it (section 9.5). To check it is right, read
+the published HTML: there must be no `<script src="...googletagmanager...">` on the
+page — the address appears only inside the consent queue.
 
-To control where ads land instead of letting Google decide, place
-`src/components/AdUnit.astro` with a slot created in the dashboard. **No page uses it
-by default**: without placing it, only the automatic formats apply.
+**Plausible** is the cookieless alternative: `ANALYTICS.plausible = "your-domain.com"`.
+Setting no cookie, it triggers no banner.
 
-**Newsletter.** One common confusion first: **RSS does not send email**. The feed is
-a file your site publishes; what polls it is a feed reader. Getting to email takes a
-provider in between.
+### 9.3 AdSense
 
-`NEWSLETTER.actionUrl` takes that provider's form endpoint. It accepts a single
-endpoint or **one per language**:
+Only worth doing once AdSense has **approved your site** — approval looks at volume
+and originality, and a fresh blog usually waits.
+
+Three pieces, in three different places:
+
+1. **The publisher id**, in the config:
 
 ```ts
-actionUrl: "https://buttondown.com/api/emails/embed-subscribe/USER"
-actionUrl: { pt: "…/USER-pt", en: "…/USER-en" }
+ANALYTICS.adsense = "ca-pub-0000000000000000";
 ```
 
-On a multilingual blog prefer one per language: the feed is per language, so a list
-fed from it is too, and someone who subscribes reading in English should not receive
-posts in Portuguese. A language with no endpoint simply shows no form — better no
-form than signing a reader up to the wrong list.
+2. **`ads.txt`**, at the site root. Create `public/ads.txt` with the exact line AdSense
+   gives you — everything in `public/` lands at the domain root, which is where Google
+   looks:
 
-The loop closes in the provider's dashboard: turn on **RSS-to-email** for each list,
+```text
+google.com, pub-0000000000000000, DIRECT, f08c47fec0942fa0
+```
+
+3. **The formats, in the AdSense dashboard**, under *Ads → By site*. Without that step
+   the script loads and **no ad appears** — a symptom indistinguishable from a bug.
+
+The account-verification meta tag needs no pasting: it is emitted from the publisher
+id. And since all advertising sits behind consent, readers who decline see no ads —
+correct behaviour, and less revenue than the dashboard projects.
+
+Automatic formats let Google decide where to insert, including between paragraphs and
+pinned to the bottom. To decide yourself, place `src/components/AdUnit.astro` with a
+slot created in the dashboard — **no page uses it by default**.
+
+### 9.4 Newsletter
+
+First, a confusion that costs time: **RSS does not send email**. The feed is a file
+the site publishes; what reads it is a feed reader. Reaching an inbox takes a provider
+in between, and that provider is what turns "a new post is out" into a message.
+
+**Pick a provider with RSS-to-email.** Mind the plan: several charge for precisely
+that automation, even with a handful of subscribers. Worth checking before signing up.
+
+**Create one list per language.** The feed is per language, so a list fed from it is
+too — someone subscribing in English should not receive Portuguese posts.
+
+**Take the real form fields, not the iframe.** This is where it is easy to go wrong:
+providers offer an iframe or a ready-made link, but what you need is the **HTML form**.
+If only the link exists, open the hosted form page and read its HTML — the three
+things that matter are there:
+
+- the `action` (where the form posts);
+- the **name of the email field**, often not `email` (Brevo uses `EMAIL`);
+- the **hidden fields**, including the **anti-bot honeypot** — a field that must be
+  submitted **empty**.
+
+Posting without them is the worst kind of failure: the provider **accepts** the request
+and subscribes nobody. The form looks like it works.
+
+```ts
+export const NEWSLETTER = {
+  actionUrl: {
+    pt: "https://provider.example/serve/AAA",
+    en: "https://provider.example/serve/BBB",
+  },
+  emailField: "EMAIL",
+  hiddenFields: {
+    pt: { locale: "pt", email_address_check: "" },
+    en: { locale: "en", email_address_check: "" },
+  },
+} as const;
+```
+
+A language with no endpoint simply shows no form — better no form than the wrong list.
+
+**Close the loop in the dashboard:** create one RSS-to-email integration per list,
 pointing at the matching feed (`/pt/rss.xml`, `/en/rss.xml`). From then on, publishing
-a post sends the email on its own. The form is plain HTML posting straight to the
-provider — no subscriber data touches your site, which stays static.
+a post sends the email by itself. Two things to watch on the first run: many providers
+pull several items at once and your feed already has posts — check how many it intends
+to send before letting it go; and there is usually a window of about an hour between
+publishing and sending.
+
+With JavaScript the submission happens in the background and the reader stays on the
+page; without it, the form posts normally. No subscriber data touches your site.
+
+### 9.5 Consent and the privacy policy
+
+This block turns nothing on — it governs what the others oblige:
+
+```ts
+export const CONSENT = {
+  required: true,
+  privacyUrl: "/privacy",
+  contact: "privacy@your-domain.com",
+} as const;
+```
+
+`contact` is the address the policy offers for data-subject requests. Create the
+mailbox before publishing: a policy pointing at an address that does not exist is
+worse than no address at all.
+
+The privacy page **assembles itself from the configuration**. You neither write nor
+maintain that text: with Google Analytics on, its section appears; with a newsletter
+in that language, the newsletter section appears; with no ads, the sentence mentioning
+them goes away. And when **nothing** is on — no analytics, no ads, no comments embed,
+no signup form — there is no privacy page, no footer link and no banner: a blog that
+collects nothing has nothing to declare.
+
+Do read the page once everything is configured. It describes what the site really
+does, but you are the one answering for the text.
+
+### 9.6 Search
+
+Nothing to configure beyond on or off: `INTEGRATIONS.search = "pagefind"` or `"none"`.
+The index is built at build time, split by language, and runs in the browser — there
+is no search server to keep.
 
 ## 10. RSS
 
