@@ -75,10 +75,32 @@ const slice = await Promise.all(
 // each fragment: { url, excerpt (HTML with <mark>), meta: { title, image, date, … } }
 ```
 
-Paginate `search.results` client-side. Language comes from the page's
-`<html lang>`, so a per-locale `/search` searches that locale. Share the card/
+Paginate `search.results` client-side. Share the card/
 pagination CSS with your feed (e.g. in a global stylesheet) so server-rendered and
 client-rendered listings look identical.
+
+## Multilingual: the index key is not the locale code
+
+Pagefind splits the index by the `<html lang>` of the pages it indexed, keyed by
+that tag **lowercased** — pages declaring `pt-BR` produce an index called `pt-br`.
+Detection from the page is automatic, which is exactly what makes an explicit
+option dangerous: passing the locale code, as most code has lying around, silently
+overrides a correct guess with a key no index carries.
+
+```js
+await pf.options({ language: htmlLang.toLowerCase() });  // "pt-br", never "pt"
+new PagefindUI({ element, language: htmlLang.toLowerCase() });
+```
+
+Nothing errors when the key is wrong. Pagefind falls back to its default index and
+answers, so a Portuguese search returns English posts and looks like a missing
+feature rather than a typo. A site whose locale code happens to equal its tag —
+`en` — works, which hides the bug in half the cases.
+
+Assert it against reality rather than against your intent: `dist/pagefind/
+pagefind-entry.json` lists the languages actually built, so a test can check every
+locale's page asks for one of them. A fork adding `es` with an `es-419` tag is then
+told, instead of shipping a search that quietly answers in another language.
 
 ## Gotcha: Enter on mobile submits a form, not a keydown
 

@@ -45,6 +45,35 @@ io.observe(mount);
 Build the `<script>` with `data-repo`, `data-repo-id`, `data-category`,
 `data-category-id`, `data-mapping`, `data-theme`, `data-lang`, `crossorigin`.
 
+## Make the embed follow YOUR theme, not the OS
+
+giscus's `preferred_color_scheme` reads the operating system. On a site with its own
+light/dark toggle that is the wrong source: a reader who switches the page to light
+keeps a dark comment box, and the toggle appears to do nothing to half the page.
+
+Resolve the theme from your own state instead, and keep it in sync afterwards — the
+embed is a cross-origin iframe, so it cannot be restyled from outside and a later
+toggle only reaches it by message:
+
+```js
+new MutationObserver(function(){
+  var frame = document.querySelector("iframe.giscus-frame");
+  if (!frame || !frame.contentWindow) return;
+  frame.contentWindow.postMessage(
+    { giscus: { setConfig: { theme: themeNow() } } }, "https://giscus.app");
+}).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+```
+
+Watch the attribute, not the button: it keeps working for whatever sets it — the
+toggle, the no-flash script, a control added later.
+
+**Resolve the theme names at build time, not through `dataset`.** Writing
+`data-theme-light` and reading `mount.dataset.themelight` returns `undefined`,
+because the DOM camelCases it to `themeLight`. The embed then loads with the literal
+string `"undefined"` as its theme and every `setConfig` carries it — no error
+anywhere, the attributes look right in the HTML, and the comments simply never
+follow. Interpolate the values into the script and there is no name to get wrong.
+
 ## Trade-offs
 
 - Commenting requires a GitHub account — fine for a dev audience, excluding for a
