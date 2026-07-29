@@ -33,12 +33,15 @@ const themeDark = giscusTheme(GISCUS.theme, "dark");
 const loader = `(function(){
   var mount = document.getElementById("giscus-mount");
   if (!mount || mount.dataset.loaded) return;
-  var follows = mount.dataset.follows === "1";
+  // Resolvidos no build; nada de dataset, cujo camelCase já custou um bug silencioso
+  // (data-theme-light vira dataset.themeLight, e "themelight" é undefined).
+  var follows = ${JSON.stringify(follows)};
+  var themeLight = ${JSON.stringify(themeLight)}, themeDark = ${JSON.stringify(themeDark)};
   function siteTheme(){
     return document.documentElement.dataset.theme || ${JSON.stringify(THEME.default)};
   }
   function themeNow(){
-    return siteTheme() === "light" ? mount.dataset.themelight : mount.dataset.themedark;
+    return siteTheme() === "light" ? themeLight : themeDark;
   }
   function load(){
     if (mount.dataset.loaded) return;
@@ -96,9 +99,6 @@ const loader = `(function(){
         data-mapping={term ? "specific" : GISCUS.mapping}
         data-term={term ?? ""}
         data-reactions={GISCUS.reactionsEnabled}
-        data-theme-light={themeLight}
-        data-theme-dark={themeDark}
-        data-follows={follows ? "1" : "0"}
         data-lang={lang}
       />
       <script is:inline set:html={loader} />

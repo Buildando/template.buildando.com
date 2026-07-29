@@ -227,6 +227,22 @@ describe.skipIf(!built)("build output", () => {
     }
   });
 
+  it.skipIf(
+    !(INTEGRATIONS.comments === "giscus" && GISCUS.repoId && GISCUS.categoryId) || !somePost,
+  )("hands the comments embed real theme names (REQ-022, REQ-031)", () => {
+    // The failure this guards was silent: the script read dataset keys that did not
+    // exist — `data-theme-light` becomes `dataset.themeLight`, and `themelight` is
+    // undefined — so the embed loaded with the literal string "undefined" as its
+    // theme and never followed the site. Everything looked configured; only the
+    // running page disagreed.
+    const html = pageOf(somePost);
+    const light = attr(html, /var themeLight = "([^"]*)"/);
+    const dark = attr(html, /themeDark = "([^"]*)"/);
+    expect(light, "no light theme reached the embed").toBeTruthy();
+    expect(dark, "no dark theme reached the embed").toBeTruthy();
+    expect([light, dark]).not.toContain("undefined");
+  });
+
   it("builds a static client search index (REQ-020, 021)", () => {
     expect(has("pagefind", "pagefind.js")).toBe(true);
   });
