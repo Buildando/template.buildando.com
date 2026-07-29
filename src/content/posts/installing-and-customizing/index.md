@@ -1,6 +1,6 @@
 ---
 title: "Installing Buildando and customizing it"
-description: "From fork to live: install it, run it locally, and customize the identity, the home intro, and the About page — all from a single configuration file."
+description: "Install it, customize the identity and wire the integrations: languages, comments, analytics, ads and newsletter — including what each needs outside the code."
 lang: en
 translations:
   pt: instalando-e-personalizando

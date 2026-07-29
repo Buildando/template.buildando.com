@@ -1,6 +1,6 @@
 ---
 title: "Instalando o Buildando e personalizando"
-description: "Do fork ao ar: instale, rode localmente e personalize a identidade, o texto inicial da home e a página Sobre — tudo a partir de um arquivo de configuração."
+description: "Instale, personalize a identidade e ligue as integrações: idiomas, comentários, analytics, anúncios e newsletter — inclusive o que cada uma exige fora do código."
 lang: pt
 translations:
   en: installing-and-customizing
