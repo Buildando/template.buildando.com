@@ -330,7 +330,9 @@ describe.skipIf(!built)("build output", () => {
     expect(html).toContain("share-native"); // native Web Share button
   });
 
-  it("renders the home facet filter, hidden until JS (REQ-035)", () => {
+  // The facet filter only appears when the default-locale home has posts to
+  // filter; a blog with no published posts there shows the empty state instead.
+  it.skipIf(!published.some((p) => p.lang === defaultLocale))("renders the home facet filter, hidden until JS (REQ-035)", () => {
     const html = read(defaultLocale, "index.html");
     expect(html).toContain('id="filter-bar" hidden');
     expect(html).toContain('data-filter="category"');
