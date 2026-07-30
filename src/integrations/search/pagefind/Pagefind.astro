@@ -6,7 +6,8 @@
 // produced by `pagefind --site dist` in the package.json build script.
 // Selected by INTEGRATIONS.search === "pagefind".
 import { useTranslations, localeMeta } from "../../../i18n";
-import { pagefindLanguage } from "../../../lib/search-index";
+import { localeSearchIndex } from "../../../lib/search-index";
+import { getPublishedPosts } from "../../../lib/posts";
 
 interface Props {
   /** Unique id of the mount element (the modal and the page pass different ids). */
@@ -16,7 +17,10 @@ interface Props {
 const { id, lang } = Astro.props;
 // Without this the widget searches whatever index it defaults to, so the modal and
 // the results page could disagree about which language they are searching.
-const searchLanguage = pagefindLanguage(localeMeta(lang).htmlLang);
+// `null` when this locale has no index of its own — then we render an empty state
+// instead of initializing Pagefind, which would silently search another language.
+const hasIndexedContent = (await getPublishedPosts(lang)).length > 0;
+const searchLanguage = localeSearchIndex(localeMeta(lang).htmlLang, hasIndexedContent);
 const t = useTranslations(lang);
 
 const idJson = JSON.stringify(id);
@@ -46,5 +50,24 @@ const script = `(function(){
 })();`;
 ---
 
-<div id={id} data-lang={lang} data-building={t("search.building")}></div>
-<script is:inline set:html={script} />
+{
+  searchLanguage ? (
+    <Fragment>
+      <div id={id} data-lang={lang} data-building={t("search.building")} />
+      <script is:inline set:html={script} />
+    </Fragment>
+  ) : (
+    <div id={id} data-lang={lang}>
+      <p class="search-empty">{t("search.emptyLocale")}</p>
+    </div>
+  )
+}
+
+<style>
+  .search-empty {
+    margin: 0;
+    padding: 0.4rem 0.2rem;
+    color: var(--color-muted);
+    font-size: 0.95rem;
+  }
+</style>

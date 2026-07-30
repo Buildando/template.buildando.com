@@ -14,3 +14,23 @@
 export function pagefindLanguage(htmlLang: string): string {
   return htmlLang.trim().toLowerCase();
 }
+
+/**
+ * The Pagefind index a locale's search should query, or `null` when that locale
+ * has no indexed content yet (REQ-020, REQ-032).
+ *
+ * Pagefind builds one index per language and only for languages that actually
+ * have indexed pages. A configured locale may legitimately have no posts of its
+ * own — the install guide is explicit that "nada obriga a traduzir tudo", so a
+ * language can exist with only fallback pages, which are not indexed. Asking
+ * Pagefind for that missing index makes it silently answer from the default one,
+ * so an empty locale would return another language's results — the very
+ * cross-language leak `pagefindLanguage` exists to prevent. Returning `null`
+ * lets the UI show an honest empty state instead of initializing that search.
+ */
+export function localeSearchIndex(
+  htmlLang: string,
+  hasIndexedContent: boolean,
+): string | null {
+  return hasIndexedContent ? pagefindLanguage(htmlLang) : null;
+}

@@ -5,7 +5,8 @@
 // (data-pagefind-body lives on the post article), so results are posts only.
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { SEARCH_PER_PAGE } from "../../config/site";
-import { pagefindLanguage } from "../../lib/search-index";
+import { localeSearchIndex } from "../../lib/search-index";
+import { getPublishedPosts } from "../../lib/posts";
 import {
   locales,
   localeMeta,
@@ -22,8 +23,11 @@ const { lang } = Astro.params;
 const t = useTranslations(lang);
 
 const searchPath = localizedPath(lang, "/search");
-// The index key is the page's html lang lowercased, not the locale code.
-const searchLanguage = pagefindLanguage(localeMeta(lang).htmlLang);
+// The index key is the page's html lang lowercased, not the locale code — and it
+// is `null` when this locale has no indexed posts of its own, so the page shows
+// an empty state instead of querying (and silently leaking) another locale's index.
+const hasIndexedContent = (await getPublishedPosts(lang)).length > 0;
+const searchLanguage = localeSearchIndex(localeMeta(lang).htmlLang, hasIndexedContent);
 const strings = {
   loading: t("search.loading"),
   results: t("search.results"),
@@ -44,7 +48,10 @@ const strings = {
 >
   <h1>{t("search.title")}</h1>
 
-  <form class="search-form" role="search" action={searchPath} method="get">
+  {
+    searchLanguage ? (
+      <Fragment>
+        <form class="search-form" role="search" action={searchPath} method="get">
     <input
       type="search"
       name="q"
@@ -214,6 +221,11 @@ const strings = {
       runSearch(getParams().q);
     })();
   </script>
+      </Fragment>
+    ) : (
+      <p class="search-status">{t("search.emptyLocale")}</p>
+    )
+  }
 </BaseLayout>
 
 <style>

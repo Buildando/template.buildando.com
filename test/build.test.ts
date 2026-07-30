@@ -247,7 +247,7 @@ describe.skipIf(!built)("build output", () => {
     expect(has("pagefind", "pagefind.js")).toBe(true);
   });
 
-  it("searches the index that its own locale actually built (REQ-020, 032)", () => {
+  it.skipIf(!published.length)("searches the index that its own locale actually built (REQ-020, 032)", () => {
     // The failure this guards: the page asks Pagefind for a language key that no
     // index carries, and the search quietly answers from the default one — which is
     // how Portuguese queries returned English posts. English hid it, because the
@@ -255,11 +255,19 @@ describe.skipIf(!built)("build output", () => {
     const entry = JSON.parse(read("pagefind", "pagefind-entry.json"));
     const built = Object.keys(entry.languages ?? {});
     expect(built.length).toBeGreaterThan(0);
+    // A configured locale with no posts of its own builds no index (the install
+    // guide allows a language to exist untranslated). Such a locale legitimately
+    // emits no search language and shows an empty state — the fix for the same
+    // leak. So the invariant is: any language a locale DOES request must be one
+    // Pagefind actually built, and at least one locale requests one.
+    let emitted = 0;
     for (const lang of locales) {
       const asked = attr(read(lang, "search", "index.html"), /searchLanguage\s*=\s*"([^"]+)"/);
-      expect(asked, `no search language emitted for ${lang}`).toBeTruthy();
+      if (!asked) continue;
+      emitted++;
       expect(built, `${lang} asks for "${asked}", which no index provides`).toContain(asked);
     }
+    expect(emitted, "no locale emitted a search language").toBeGreaterThan(0);
   });
 
   it("ships exactly the analytics that are configured (REQ-038, REQ-042)", () => {
@@ -379,7 +387,7 @@ describe.skipIf(!built)("build output", () => {
     }
   });
 
-  it("serves a search results page with a query form (REQ-036)", () => {
+  it.skipIf(!published.length)("serves a search results page with a query form (REQ-036)", () => {
     const html = read(defaultLocale, "search", "index.html");
     expect(html).toContain('name="q"'); // the query input the form submits
     expect(html).toContain('id="search-results"'); // container the client fills with cards
