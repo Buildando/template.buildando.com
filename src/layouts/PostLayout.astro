@@ -118,6 +118,20 @@ const breadcrumbs = [
   <ShareButtons url={canonicalURL} title={data.title} lang={uiLang} />
 
   <Comments term={data.discussion} lang={uiLang} />
+
+  {/* Click-to-zoom for images in the post body (.prose). Progressive
+      enhancement: without JS the images stay inline and no cursor hint shows. */}
+  <div
+    id="post-lightbox"
+    class="post-lightbox"
+    role="dialog"
+    aria-modal="true"
+    aria-hidden="true"
+    aria-label={t("a11y.imageClose")}
+    data-zoom-label={t("a11y.imageZoom")}
+  >
+    <img alt="" />
+  </div>
 </BaseLayout>
 
 <style>
@@ -147,4 +161,79 @@ const breadcrumbs = [
   .tags a {
     color: var(--color-muted);
   }
+  .post-lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    background: rgba(0, 0, 0, 0.85);
+    cursor: zoom-out;
+  }
+  .post-lightbox.open {
+    display: flex;
+  }
+  .post-lightbox img {
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    border-radius: 8px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .post-lightbox.open {
+      animation: post-lightbox-fade 0.15s ease-out;
+    }
+    @keyframes post-lightbox-fade {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+  }
 </style>
+
+<script>
+  // Lightbox for post-body images only (.prose img). Cover and UI images are
+  // untouched. The zoom cursor is set from JS so no-JS readers get no false
+  // affordance.
+  const box = document.getElementById("post-lightbox");
+  const prose = document.querySelector(".prose");
+  if (box && prose) {
+    const boxImg = box.querySelector("img");
+    const zoomLabel = (box as HTMLElement).dataset.zoomLabel ?? "";
+
+    prose.querySelectorAll("img").forEach((img) => {
+      img.style.cursor = "zoom-in";
+      if (zoomLabel && !img.title) img.title = zoomLabel;
+    });
+
+    const open = (img: HTMLImageElement) => {
+      boxImg!.src = img.currentSrc || img.src;
+      boxImg!.alt = img.alt || "";
+      box.classList.add("open");
+      box.setAttribute("aria-hidden", "false");
+      document.body.style.overflow = "hidden";
+    };
+    const close = () => {
+      box.classList.remove("open");
+      box.setAttribute("aria-hidden", "true");
+      boxImg!.removeAttribute("src");
+      document.body.style.overflow = "";
+    };
+
+    prose.addEventListener("click", (e) => {
+      const img = (e.target as HTMLElement).closest("img");
+      if (img) open(img as HTMLImageElement);
+    });
+    box.addEventListener("click", close);
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && box.classList.contains("open")) close();
+    });
+  }
+</script>

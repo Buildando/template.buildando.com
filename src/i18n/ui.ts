@@ -55,6 +55,8 @@ export const ui: Record<string, Record<string, string>> = {
     "footer.privacy": "Privacidade",
     "a11y.theme": "Alternar tema claro/escuro",
     "a11y.lang": "Trocar idioma",
+    "a11y.imageZoom": "Ampliar imagem",
+    "a11y.imageClose": "Fechar imagem ampliada",
     "consent.title": "Consentimento de cookies",
     "consent.text":
       "Usamos cookies para análise e anúncios. Você aceita?",
@@ -124,6 +126,8 @@ export const ui: Record<string, Record<string, string>> = {
     "footer.privacy": "Privacy",
     "a11y.theme": "Toggle light/dark theme",
     "a11y.lang": "Switch language",
+    "a11y.imageZoom": "Zoom image",
+    "a11y.imageClose": "Close zoomed image",
     "consent.title": "Cookie consent",
     "consent.text": "We use cookies for analytics and ads. Do you accept?",
     "consent.accept": "Accept",
