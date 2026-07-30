@@ -87,7 +87,7 @@ a preset of tokens in `src/config/skins.ts`. Switching identity is **one line** 
 export const ACTIVE_SKIN: SkinName = "editorial";
 ```
 
-Six of them ship ready:
+Seven of them ship ready:
 
 - **`terminal`** — the default: dark, blue accent, Inter + Space Grotesk
 - **`editorial`** — serif headings, warm paper, green accent
@@ -95,12 +95,15 @@ Six of them ship ready:
 - **`minimal`** — nearly monochrome, discreet lime accent
 - **`warmDev`** — the Solarized palette
 - **`brutalist`** — radical: hard borders, square corners, offset shadows, violet accent
+- **`berry`** — vibrant magenta/pink over a plum base, wider reading column; changes **structure** (the filter becomes a left sidebar on the home)
+
+![The seven Buildando skins, each in light and dark](./skins.png)
 
 Each comes with light **and** dark (the theme button toggles). To craft your own,
 copy a preset in `skins.ts` and edit the values — it is plain CSS. A skin can even
 change **structure**, not just color: rules scoped by `[data-skin="name"]` in
-`src/styles/skins.css` — `brutalist` is the example. More in the **Skins** section
-of the `README`.
+`src/styles/skins.css` — `brutalist` and `berry` are the examples. More in the
+**Skins** section of the `README`.
 
 ## 6. One language or several
 

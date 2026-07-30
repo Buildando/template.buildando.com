@@ -43,8 +43,9 @@ export const SITE = {
  * under prefers-color-scheme: dark and the theme toggle.
  *
  * Switch identity by setting ACTIVE_SKIN to any key in SKINS — "terminal"
- * (default), "editorial", "mono", "minimal", or "warmDev". Craft your own by
- * copying a preset in ./skins.ts. See the "Skins" section in README.md.
+ * (default), "editorial", "mono", "minimal", "warmDev", "brutalist", or "berry".
+ * Craft your own by copying a preset in ./skins.ts. See the "Skins" section in
+ * README.md.
  */
 export const ACTIVE_SKIN: SkinName = "terminal";
 export const BRAND = SKINS[ACTIVE_SKIN];

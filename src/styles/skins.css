@@ -123,3 +123,61 @@
 :root[data-skin="brutalist"] blockquote {
   border-left-width: 6px;
 }
+
+/* ── Berry ───────────────────────────────────────────────────────────────────
+   Structure-changing skin: turns the HOME listing into two columns — the facet
+   filter becomes a LEFT sidebar (stacked, sticky) and the post list takes the
+   right. Colors and the wider reading column (62rem) are tokens in
+   src/config/skins.ts; only this layout is structural, so it lives here.
+
+   It engages only when the filter is visible (there are facets and JS has enabled
+   it); with no JS, or on any other page, nothing changes. Below the breakpoint
+   (tablet) it falls back to the original stacked layout — responsive. To drop the
+   whole skin, set ACTIVE_SKIN back to "terminal" in src/config/site.ts. */
+
+@media (min-width: 48rem) {
+  /* <main> on the home becomes a 2-col grid ONLY when the filter is present and
+     visible (:has(#filter-bar:not([hidden])) — JS removes the [hidden]). Other
+     pages have no #filter-bar, so the selector never matches them. */
+  :root[data-skin="berry"] main.wrap:has(#filter-bar:not([hidden])) {
+    display: grid;
+    grid-template-columns: minmax(11rem, 13rem) minmax(0, 1fr);
+    column-gap: 2.25rem;
+    align-items: start;
+  }
+
+  /* Full-bleed rows across the top/bottom of the grid. */
+  :root[data-skin="berry"] main.wrap:has(#filter-bar:not([hidden])) > .hero,
+  :root[data-skin="berry"] main.wrap:has(#filter-bar:not([hidden])) > .section-title,
+  :root[data-skin="berry"] main.wrap:has(#filter-bar:not([hidden])) > .filter-empty,
+  :root[data-skin="berry"] main.wrap:has(#filter-bar:not([hidden])) > .pagination {
+    grid-column: 1 / -1;
+  }
+
+  /* Left column: the filter bar, stacked instead of horizontal, and sticky while
+     the list scrolls. `top` clears the sticky header. */
+  :root[data-skin="berry"] main.wrap:has(#filter-bar:not([hidden])) > #filter-bar {
+    grid-column: 1;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1.1rem;
+    margin: 0;
+    position: sticky;
+    top: 5rem;
+  }
+
+  /* Each facet: label on top, chips wrapping just beneath it. */
+  :root[data-skin="berry"] main.wrap:has(#filter-bar:not([hidden])) > #filter-bar .facet {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.45rem;
+  }
+
+  /* Right column: the post list, without the 1-column layout's top border, so it
+     starts flush with the top of the sidebar. */
+  :root[data-skin="berry"] main.wrap:has(#filter-bar:not([hidden])) > #post-list {
+    grid-column: 2;
+    margin-top: 0;
+    border-top: 0;
+  }
+}

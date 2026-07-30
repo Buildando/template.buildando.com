@@ -83,7 +83,7 @@ no `site.ts`:
 export const ACTIVE_SKIN: SkinName = "editorial";
 ```
 
-Já vêm prontas seis:
+Já vêm prontas sete:
 
 - **`terminal`** — padrão: escuro, acento azul, Inter + Space Grotesk
 - **`editorial`** — títulos em serifa, papel quente, acento verde
@@ -91,12 +91,15 @@ Já vêm prontas seis:
 - **`minimal`** — quase monocromático, acento lime discreto
 - **`warmDev`** — a paleta Solarized
 - **`brutalist`** — radical: bordas duras, cantos retos, sombras offset, acento violeta
+- **`berry`** — magenta/rosa vibrante sobre base ameixa, coluna de leitura mais larga; muda **estrutura** (o filtro vira uma barra lateral à esquerda na home)
+
+![As sete skins do Buildando, cada uma com tema claro e escuro](./skins.png)
 
 Cada uma vem com light **e** dark (o botão de tema alterna). Para criar a sua,
 copie um preset em `skins.ts` e edite os valores — são CSS puro. Uma skin pode até
 mudar **estrutura** (não só cor): regras escopadas por `[data-skin="nome"]` em
-`src/styles/skins.css` — a `brutalist` é o exemplo. Mais detalhes na seção
-**Skins** do `README`.
+`src/styles/skins.css` — a `brutalist` e a `berry` são os exemplos. Mais detalhes
+na seção **Skins** do `README`.
 
 ## 6. Um idioma ou vários
 

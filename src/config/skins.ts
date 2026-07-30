@@ -205,6 +205,37 @@ export const SKINS = {
     fonts: { body: SANS, heading: GROTESK, mono: MONO },
     contentWidth: "48rem",
   },
+
+  /**
+   * Berry — magenta/rosa vibrante sobre uma base ameixa. Uma identidade quente e
+   * distinta das demais (nenhuma outra usa magenta). Coluna de leitura mais larga
+   * (62rem); o layout de filtro em barra lateral na home é estrutural e vive em
+   * src/styles/skins.css, escopado por `[data-skin="berry"]`.
+   */
+  berry: {
+    colors: {
+      light: {
+        bg: "#fdf6fa",
+        surface: "#f6e9f1",
+        text: "#1f1420",
+        muted: "#7c6a82",
+        accent: "#c01f6d",
+        accentContrast: "#ffffff",
+        border: "#ecdde7",
+      },
+      dark: {
+        bg: "#160f1b",
+        surface: "#201526",
+        text: "#f1e9f3",
+        muted: "#ab9cb5",
+        accent: "#ff5c93",
+        accentContrast: "#160f1b",
+        border: "#33253c",
+      },
+    },
+    fonts: { body: SANS, heading: GROTESK, mono: MONO },
+    contentWidth: "62rem",
+  },
 } satisfies Record<string, Skin>;
 
 export type SkinName = keyof typeof SKINS;
